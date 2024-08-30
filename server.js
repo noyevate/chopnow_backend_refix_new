@@ -1,0 +1,38 @@
+const express = require('express');
+const app = express();
+const dotenv = require('dotenv')
+const port = process.env.PORT || 4000;
+const mongoose = require('mongoose');
+const AuthRoute = require("./routes/authRoute");
+const UserRoute = require("./routes/userRoute");
+const CategoryRoute = require("./routes/categoryRoute");
+const RestaurantRoute = require("./routes/restaurantRoutes");
+const FoodRoute = require("./routes/foodRoute");
+const RatingRoute = require("./routes/ratingRoute");
+const AddressRoute = require("./routes/addressRoute");
+const CartRoute = require("./routes/cartRoute");
+const OrderRoute = require("./routes/orderRoute");
+
+
+dotenv.config();
+
+mongoose.connect(process.env.MONGOURL).then(() => {
+    console.log("chopnow backend connected to mongoDb database!")
+}).catch((err) =>{console.log(err)})
+
+
+app.use(express.json());
+app.use(express.urlencoded({extended: true}));
+
+app.get('/', (req,res) => res.send("Hello world"));
+app.use('/', AuthRoute);
+app.use('/api/users', UserRoute);
+app.use('/api/category', CategoryRoute);
+app.use('/api/restaurant', RestaurantRoute);
+app.use('/api/food', FoodRoute);
+app.use('/api/rating', RatingRoute);
+app.use('/api/address', AddressRoute);
+app.use('/api/cart', CartRoute);
+app.use('/api/order', OrderRoute);
+
+app.listen(port, () => console.log(`chopnow backend services is running on port: ${port}`))

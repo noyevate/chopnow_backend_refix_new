@@ -1,0 +1,14 @@
+const express = require('express');
+const { createAccount, setPIN, login, validatePhone, validateEmail, resendOTP } = require('../controllers/authControllers');
+
+const router = express.Router();
+
+router.post('/create-account', createAccount);
+router.post('/set-pin/:id/:pin', setPIN);
+router.post('/resend-otp/:id', resendOTP);
+router.post('/login/:phone/:pin', login);
+router.post('/verify-phone/:phone', validatePhone);
+router.post('/verify-email/:email', validateEmail);
+
+
+module.exports = router;

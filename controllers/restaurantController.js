@@ -1,0 +1,147 @@
+const Restaurant = require("../models/Restaurant");
+
+
+async function addRestaurant(req, res) {
+    const { title, time, imageUrl, owner, code, logoUrl, coords } = req.body;
+    if (!title || !time || !imageUrl || !owner || !code || !logoUrl || !coords
+        || !coords.latitude || !coords.longitude || !coords.address || !coords.title) {
+        return res.status(400).json({ status: false, message: "You have a missing field" });
+    };
+    try {
+        const newRestaurant = new Restaurant(req.body);
+        await newRestaurant.save();
+        res.status(201).json({ status: true, message: "Restaurant added Successfully" });
+    } catch (error) {
+        res.status(500).json({ status: false, message: error.message });
+    }
+}
+
+async function getRestaurantById(req, res) {
+    const id = req.params.id;
+    try {
+        const restaurants = await Restaurant.findById(id)
+        res.status(200).json(restaurants);
+    } catch (error) {
+        res.status(500).json({ status: false, message: error.message });
+    }
+}
+
+async function getRestaurantByUser(req, res) {
+    const userId = req.params.userId;
+
+    try {
+        const restaurant = await Restaurant.findOne({ userId: userId });
+        if (!restaurant) {
+            return res.status(404).json({ status: false, message: "Restaurant not found" });
+        }
+        res.status(200).json(restaurant);
+    } catch (error) {
+        res.status(500).json({ status: false, message: error.message });
+    }
+}
+
+async function getRestaurantbyUserId(req, res) {
+    const userId = req.user.id;
+    try {
+        const restaurant = await Restaurant.find({ userId: userId })
+
+        if (!restaurant) {
+            return res.status(404).json({ status: false, message: "Restaurant not found" });
+        }
+        res.status(200).json(restaurant);
+    } catch (error) {
+        return res.status(500).json({ status: false, message: error.message });
+    }
+}
+
+async function getRandomRestaurant(req, res) {
+    const code = req.params.code;
+    try {
+        let randomRestaurant = [];
+
+        if (code) {
+            randomRestaurant = await Restaurant.aggregate([
+                { $match: { code } },
+                { $sample: { size: 20 } }
+            ]);
+        };
+        if (randomRestaurant.length === 0) {
+            randomRestaurant = await Restaurant.aggregate([
+                { $match: { isAvailable: true } },
+                { $sample: { size: 5 } }
+            ]);
+        };
+        res.status(200).json(randomRestaurant);
+    } catch (error) {
+        res.status(500).json({ status: false, message: error.message });
+    }
+}
+
+async function getAllNearbyRestaurant(req, res) {
+    const code = req.params.code;
+    try {
+        let allNearbyRestaurants = [];
+
+        if (code) {
+            allNearbyRestaurants = await Restaurant.aggregate([
+                { $match: { code } },
+
+            ]);
+        };
+        if (allNearbyRestaurants.length === 0) {
+            allNearbyRestaurants = await Restaurant.aggregate([
+                { $match: { isAvailable: true } },
+
+            ]);
+        }
+        
+
+        res.status(200).json(allNearbyRestaurants);
+    } catch (error) {
+        res.status(500).json({ status: false, message: error.message });
+    }
+}
+
+async function restaurantAvailability(req, res) {
+    try {
+        const restaurantId = req.params.id;
+        const restaurant = await Restaurant.findById(restaurantId);
+
+        if (!restaurant) {
+            return res.status(404).send({ message: 'Restaurant not found' });
+        }
+
+        restaurant.isAvailabe = !restaurant.isAvailabe;
+
+        const updatedRestaurant = await Restaurant.findByIdAndUpdate(
+            restaurantId,
+            { isAvailabe: restaurant.isAvailabe },
+            { new: true, runValidators: true }
+        );
+
+        res.status(200).send(updatedRestaurant);
+    } catch (error) {
+        res.status(500).send({ message: 'Internal server error', error })
+    }
+}
+
+async function getPopularRestaurant(req, res) {
+    try {
+        console.log("APi reached")
+        let popularRestaurants = [];
+        popularRestaurants = await Restaurant.aggregate([
+            { $match: { isAvailabe: true } },
+            { $sort: { rating: -1 } },
+            { $limit: 30 }
+        ]);
+
+        console.log('Matched Restaurants:', popularRestaurants);
+        res.status(200).json(popularRestaurants);
+    } catch (err) {
+        console.error('Error fetching popular restaurants:', err);
+        res.status(500).json({ error: 'Failed to fetch popular restaurants' });
+    }
+};
+
+module.exports = { addRestaurant, getRestaurantById, getRestaurantByUser, getRestaurantbyUserId, getRandomRestaurant, getAllNearbyRestaurant, restaurantAvailability, getPopularRestaurant }
+
