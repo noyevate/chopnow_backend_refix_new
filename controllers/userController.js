@@ -217,28 +217,32 @@ async function changePhone(req, res) {
 
     }
 }
+
+
 async function verifyPin(req, res) {
     const userId = req.user.id;
-    const { pin } = req.params
+    const { pin } = req.params;
 
     try {
-        const user = await User.findById({ _id: userId });
+        const user = await User.findById(userId); // No need to pass an object, just pass userId directly
 
-        const isPinValid = bcrypt.compare(pin, user.pin);
+        if (!user) {
+            return res.status(404).json({ status: false, message: 'User not found' });
+        }
+
+        const isPinValid = await bcrypt.compare(pin, user.pin); // Await the comparison
         if (!isPinValid) {
             return res.status(400).json({ status: false, message: 'Wrong PIN' });
         }
-        res.status(200).json({ status: true, message: "Valid Pin" });
-
+        
+        res.status(200).json({ status: true, message: "Valid PIN" });
 
     } catch (error) {
-        console.error('Error in login:', error);
+        console.error('Error in verifying PIN:', error);
         res.status(500).json({ message: 'Server error', error });
     }
-
-
-
 }
+
 
 async function changePin(req, res) {
 
