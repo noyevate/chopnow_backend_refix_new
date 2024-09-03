@@ -82,7 +82,7 @@ async function requestOTPForgotPIN(req, res) {
 
 
         if (!user) {
-            return res.status(404).json({status:false, message: 'User not found' });
+            return res.status(404).json({ status: false, message: 'User not found' });
         }
 
         if (!user.phoneVerification) {
@@ -97,21 +97,21 @@ async function requestOTPForgotPIN(req, res) {
 
         // Send OTP
         // await sendOTP(formattedPhone, otp);
-        
+
 
         res.status(200).json({
             status: true,
             message: 'Otp sent to phone number.',
             user: {
-              id: user._id,
-              first_name: user.first_name,
-              last_name: user.last_name,
-              phone: user.phone,
-              email: user.email
+                id: user._id,
+                first_name: user.first_name,
+                last_name: user.last_name,
+                phone: user.phone,
+                email: user.email
             }
-          });
+        });
     } catch (error) {
-        res.status(500).json({status:false, message: 'Server error'});
+        res.status(500).json({ status: false, message: 'Server error' });
     }
 }
 
@@ -156,39 +156,39 @@ async function resetPIN(req, res) {
     }
 }
 
- async function updateUserName(req, res) {
-   
+async function updateUserName(req, res) {
+
     const userId = req.user.id
     const { first_name, last_name } = req.params;
-    console.log("Tis is ",userId)
+    console.log("Tis is ", userId)
 
     try {
-        const updatedUser = await User.findByIdAndUpdate({_id: userId});
+        const updatedUser = await User.findByIdAndUpdate({ _id: userId });
 
         if (!updatedUser) {
             return res.status(404).send('User not found');
         }
         updatedUser.first_name = first_name,
-        updatedUser.last_name = last_name,
+            updatedUser.last_name = last_name,
 
-        updatedUser.save()
+            updatedUser.save()
 
-        res.status(200).json( {status: true, updatedUser, message: "Name Changed Successfully"});
+        res.status(200).json({ status: true, updatedUser, message: "Name Changed Successfully" });
     } catch (error) {
         console.error('Error updating user name:', error);
         res.status(500).json({ status: false, message: 'Server error', error });
-  
+
     }
 }
 
-async function changePhone (req, res) {
-   
+async function changePhone(req, res) {
+
     const userId = req.user.id
     const { phone } = req.params;
 
     const phoneRegex = /^(?:0)?[789]\d{9}$/;
     if (!phoneRegex.test(phone)) {
-      return res.json({ status: false, message: 'Phone number Invalid.' });
+        return res.json({ status: false, message: 'Phone number Invalid.' });
     }
 
     // Prepend "+234" to the phone number if it doesn't already start with it
@@ -196,27 +196,86 @@ async function changePhone (req, res) {
 
     const existingUser = await User.findOne({ phone: formattedPhone });
     if (existingUser) {
-      return res.json({ status: false, message: 'Phone number already exists. Login to continue' });
+        return res.json({ status: false, message: 'Phone number already exists. Login to continue' });
     }
 
     try {
-        const updatedUser = await User.findByIdAndUpdate({_id: userId});
+        const updatedUser = await User.findByIdAndUpdate({ _id: userId });
 
         if (!updatedUser) {
             return res.status(404).send('User not found');
         }
         updatedUser.phone = formattedPhone,
-       
 
-        updatedUser.save()
 
-        res.status(200).json( {status: true, updatedUser, message: "Name Changed Successfully"});
+            updatedUser.save()
+
+        res.status(200).json({ status: true, updatedUser, message: "Name Changed Successfully" });
     } catch (error) {
         console.error('Error updating user name:', error);
         res.status(500).json({ status: false, message: 'Server error', error });
-  
+
+    }
+}
+async function verifyPin(req, res) {
+    const userId = req.user.id;
+    const { pin } = req.params
+
+    try {
+        const user = await User.findByIdAndUpdate({ _id: userId });
+
+        const isPinValid = bcrypt.compare(pin, user.pin);
+        if (!isPinValid) {
+            return res.status(400).json({ status: false, message: 'Wrong PIN' });
+        }
+        res.status(200).json({ status: true, message: "Valid Pin" });
+
+
+    } catch (error) {
+        console.error('Error in login:', error);
+        res.status(500).json({ message: 'Server error', error });
+    }
+
+
+
+}
+
+async function changePin(req, res) {
+
+    const userId = req.user.id
+    const { phone } = req.params;
+
+    const phoneRegex = /^(?:0)?[789]\d{9}$/;
+    if (!phoneRegex.test(phone)) {
+        return res.json({ status: false, message: 'Phone number Invalid.' });
+    }
+
+    // Prepend "+234" to the phone number if it doesn't already start with it
+    const formattedPhone = phone.startsWith('+234') ? phone : '+234' + phone.replace(/^0/, '');
+
+    const existingUser = await User.findOne({ phone: formattedPhone });
+    if (existingUser) {
+        return res.json({ status: false, message: 'Phone number already exists. Login to continue' });
+    }
+
+    try {
+        const updatedUser = await User.findByIdAndUpdate({ _id: userId });
+
+        if (!updatedUser) {
+            return res.status(404).send('User not found');
+        }
+        updatedUser.phone = formattedPhone,
+
+
+            updatedUser.save()
+
+        res.status(200).json({ status: true, updatedUser, message: "Name Changed Successfully" });
+    } catch (error) {
+        console.error('Error updating user name:', error);
+        res.status(500).json({ status: false, message: 'Server error', error });
+
     }
 }
 
 
-module.exports = { getUser, verifyPhone, deleteUser,changePhone, requestOTPForgotPIN, verifyOTPForgotPIN, resetPIN, updateUserName };
+module.exports = { getUser, verifyPin, verifyPhone, deleteUser, changePhone, requestOTPForgotPIN, verifyOTPForgotPIN, resetPIN, updateUserName };
