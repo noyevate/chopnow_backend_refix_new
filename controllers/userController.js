@@ -231,6 +231,7 @@ async function verifyPin(req, res) {
         }
 
         const isPinValid = await bcrypt.compare(pin, user.pin); // Await the comparison
+        console.log(isPinValid);
         if (!isPinValid) {
             return res.status(400).json({ status: false, message: 'Wrong PIN' });
         }
