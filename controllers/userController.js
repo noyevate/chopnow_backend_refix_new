@@ -181,5 +181,42 @@ async function resetPIN(req, res) {
     }
 }
 
+async function changePhone (req, res) {
+   
+    const userId = req.user.id
+    const { phone } = req.params;
 
-module.exports = { getUser, verifyPhone, deleteUser, requestOTPForgotPIN, verifyOTPForgotPIN, resetPIN, updateUserName };
+    const phoneRegex = /^(?:0)?[789]\d{9}$/;
+    if (!phoneRegex.test(phone)) {
+      return res.json({ status: false, message: 'Phone number Invalid.' });
+    }
+
+    // Prepend "+234" to the phone number if it doesn't already start with it
+    const formattedPhone = phone.startsWith('+234') ? phone : '+234' + phone.replace(/^0/, '');
+
+    const existingUser = await User.findOne({ phone: formattedPhone });
+    if (existingUser) {
+      return res.json({ status: false, message: 'Phone number already exists. Login to continue' });
+    }
+
+    try {
+        const updatedUser = await User.findByIdAndUpdate({_id: userId});
+
+        if (!updatedUser) {
+            return res.status(404).send('User not found');
+        }
+        updatedUser.phone = formattedPhone,
+       
+
+        updatedUser.save()
+
+        res.status(200).json( {status: true, updatedUser, message: "Name Changed Successfully"});
+    } catch (error) {
+        console.error('Error updating user name:', error);
+        res.status(500).json({ status: false, message: 'Server error', error });
+  
+    }
+}
+
+
+module.exports = { getUser, verifyPhone, deleteUser,changePhone, requestOTPForgotPIN, verifyOTPForgotPIN, resetPIN, updateUserName };
