@@ -222,7 +222,7 @@ async function verifyPin(req, res) {
     const { pin } = req.params
 
     try {
-        const user = await User.findByIdAndUpdate({ _id: userId });
+        const user = await User.findById({ _id: userId });
 
         const isPinValid = bcrypt.compare(pin, user.pin);
         if (!isPinValid) {
