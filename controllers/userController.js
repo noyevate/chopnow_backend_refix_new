@@ -235,7 +235,7 @@ async function verifyPin(req, res) {
         if (!isPinValid) {
             return res.status(400).json({ status: false, message: 'Wrong PIN' });
         }
-        
+
         res.status(200).json({ status: true, message: "Valid PIN" });
 
     } catch (error) {
@@ -244,43 +244,32 @@ async function verifyPin(req, res) {
     }
 }
 
-
 async function changePin(req, res) {
-
-    const userId = req.user.id
-    const { phone } = req.params;
-
-    const phoneRegex = /^(?:0)?[789]\d{9}$/;
-    if (!phoneRegex.test(phone)) {
-        return res.json({ status: false, message: 'Phone number Invalid.' });
-    }
-
-    // Prepend "+234" to the phone number if it doesn't already start with it
-    const formattedPhone = phone.startsWith('+234') ? phone : '+234' + phone.replace(/^0/, '');
-
-    const existingUser = await User.findOne({ phone: formattedPhone });
-    if (existingUser) {
-        return res.json({ status: false, message: 'Phone number already exists. Login to continue' });
-    }
+    const { id, pin } = req.params;
 
     try {
-        const updatedUser = await User.findByIdAndUpdate({ _id: userId });
+        const user = await User.findById({ _id: id });
 
-        if (!updatedUser) {
-            return res.status(404).send('User not found');
+
+        if (!user && !user.phoneVerification) {
+            return res.status(400).json({ status: false, message: 'Phone not verified or user not found' });
         }
-        updatedUser.phone = formattedPhone,
+        console.log(pin)
+        // Hash the PIN
+        user.pin = await hashPIN(pin);
+        console.log(user.pin)
+        await user.save();
 
+        const token = jwt.sign({ id: user._id, userType: user.userType, phone: user.phone }, process.env.JWT_SECRET, { expiresIn: '50d' });
 
-            updatedUser.save()
-
-        res.status(200).json({ status: true, updatedUser, message: "Name Changed Successfully" });
+        res.status(201).json({ status: true, message: 'PIN set successfully. You can now log in.', token });
     } catch (error) {
-        console.error('Error updating user name:', error);
         res.status(500).json({ status: false, message: 'Server error', error });
-
     }
 }
 
 
-module.exports = { getUser, verifyPin, verifyPhone, deleteUser, changePhone, requestOTPForgotPIN, verifyOTPForgotPIN, resetPIN, updateUserName };
+
+
+
+module.exports = { getUser, verifyPin, changePin, verifyPhone, deleteUser, changePhone, requestOTPForgotPIN, verifyOTPForgotPIN, resetPIN, updateUserName };
