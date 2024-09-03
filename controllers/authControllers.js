@@ -169,7 +169,7 @@ async function resendOTP(req, res) {
   const { id } = req.params;
 
   try {
-    const user = await User.findById({ _id: id });;
+    const user = await User.findById({ _id: id });
 
     if (!user) {
       return res.status(404).json({ status: false, message: 'User not found' });
