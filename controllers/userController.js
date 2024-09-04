@@ -260,8 +260,6 @@ async function changePin(req, res) {
         console.log(user.pin)
         await user.save();
 
-        const token = jwt.sign({ id: user._id, userType: user.userType, phone: user.phone }, process.env.JWT_SECRET, { expiresIn: '50d' });
-
         res.status(201).json({ status: true, message: 'PIN set successfully. You can now log in.', token });
     } catch (error) {
         res.status(500).json({ status: false, message: 'Server error', error });
