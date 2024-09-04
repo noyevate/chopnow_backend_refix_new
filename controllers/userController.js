@@ -248,23 +248,27 @@ async function changePin(req, res) {
     const { id, pin } = req.params;
 
     try {
-        const user = await User.findById({ _id: id });
+        const user = await User.findById(id);
 
-
-        if (!user && !user.phoneVerification) {
-            return res.status(400).json({ status: false, message: 'Phone not verified or user not found' });
+        if (!user) {
+            return res.status(400).json({ status: false, message: 'User not found' });
         }
-        console.log(pin)
-        // Hash the PIN
+        if (!user.phoneVerification) {
+            return res.status(400).json({ status: false, message: 'Phone not verified' });
+        }
+
         user.pin = await hashPIN(pin);
-        console.log(user.pin)
+        console.log(`Hashed PIN: ${user.pin}`);
+
         await user.save();
 
-        res.status(201).json({ status: true, message: 'PIN set successfully. You can now log in.', token });
+        res.status(201).json({ status: true, message: 'PIN set successfully. You can now log in.' });
     } catch (error) {
+        console.error('Error in changePin:', error);
         res.status(500).json({ status: false, message: 'Server error', error });
     }
 }
+
 
 
 
