@@ -1,4 +1,4 @@
-o// routes/user.js
+// routes/user.js
 const express = require('express');
 const { getUser, verifyPhone, verifyPin, deleteUser,requestOTPForgotPIN, changePhone, updateUserName,verifyOTPForgotPIN, resetPIN, changePin, } = require('../controllers/userController');
 const {verifyTokenAndAuthorization} = require('../middlewares/verifyToken')
