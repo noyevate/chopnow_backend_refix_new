@@ -1,6 +1,6 @@
-// routes/user.js
+o// routes/user.js
 const express = require('express');
-const { getUser, verifyPhone, verifyPin, changePin, deleteUser,requestOTPForgotPIN, changePhone, updateUserName,verifyOTPForgotPIN, resetPIN, changePin, } = require('../controllers/userController');
+const { getUser, verifyPhone, verifyPin, deleteUser,requestOTPForgotPIN, changePhone, updateUserName,verifyOTPForgotPIN, resetPIN, changePin, } = require('../controllers/userController');
 const {verifyTokenAndAuthorization} = require('../middlewares/verifyToken')
 
 const router = express.Router();
