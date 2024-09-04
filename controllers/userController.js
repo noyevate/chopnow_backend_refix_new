@@ -257,7 +257,7 @@ async function changePin(req, res) {
             return res.status(400).json({ status: false, message: 'Phone not verified' });
         }
 
-        user.pin = pin  //await hashPIN(pin);
+        user.pin = await hashPIN(pin);
         await user.save();
 
         res.status(201).json({ status: true, message: 'PIN set successfully. You can now log in.' });
