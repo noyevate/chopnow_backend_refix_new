@@ -36,14 +36,14 @@ async function verifyPhone(req, res) {
             user.otpExpires = null; // Clear OTP expiry
             await user.save();
 
-            const userToken = jwt.sign({
+            const token = jwt.sign({
                 id: user._id,
                 userType: user.userType,
                 phone: user.phone
             }, process.env.JWT_SECRET, { expiresIn: "50d" });
 
-            const { otp, createdAt, ...others } = user._doc;
-            return res.status(201).json({ ...others, userToken, status: true, message: 'Phone number verified. You can now set your PIN.' });
+            const {password,otp,createdAt,updatedAt, ...others} = user._doc;
+            return res.status(201).json({ ...others, token, status: true, message: 'Phone number verified. You can now set your PIN.' });
         } else {
             return res.status(404).json({ status: false, message: "OTP verification failed" });
         }
