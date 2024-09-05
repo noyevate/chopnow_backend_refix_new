@@ -3,34 +3,46 @@ const Cart = require("../models/Cart");
 async function addProductToCart(req, res) {
     const userId = req.user.id;
     const { productId, additives, totalPrice, Tquantity } = req.body;
+
+    // Convert totalPrice and Tquantity to numbers
+    const parsedTotalPrice = Number(totalPrice);
+    const parsedTquantity = Number(Tquantity);
+
+    if (isNaN(parsedTotalPrice)) {
+        return res.status(400).json({ status: false, message: "Invalid data type for totalPrice or Tquantity" });
+    }
+
     let count;
     try {
         const existingProduct = await Cart.findOne({ userId: userId, productId: productId });
         count = await Cart.countDocuments({ userId });
 
         if (existingProduct) {
-            existingProduct.totalPrice += totalPrice * Tquantity;
-            existingProduct.Tquantity += Tquantity;
+            // Update totalPrice and Tquantity
+            existingProduct.totalPrice += parsedTotalPrice * parsedTquantity;
+            existingProduct.Tquantity += parsedTquantity;
 
             await existingProduct.save();
-            return res.status(200).json({ status: true, count: count })
+            return res.status(200).json({ status: true, count: count });
         } else {
+            // Create new cart item
             const newCartItem = new Cart({
                 userId: userId,
                 productId: productId,
                 additives: additives,
-                totalPrice: totalPrice,
-                Tquantity: Tquantity
+                totalPrice: parsedTotalPrice,
+                Tquantity: parsedTquantity
             });
-            await newCartItem.save()
+            await newCartItem.save();
 
             count = await Cart.countDocuments({ userId: userId });
-            return res.status(201).json({ status: true, count: count })
+            return res.status(201).json({ status: true, count: count });
         }
     } catch (error) {
-        return res.status(500).json({ status: false, message: error.message })
+        return res.status(500).json({ status: false, message: error.message });
     }
 }
+
 
 async function removeCartIem(req, res) {
     const cartItemId = req.params.id;
