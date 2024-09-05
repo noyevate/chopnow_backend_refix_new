@@ -43,7 +43,7 @@ async function verifyPhone(req, res) {
             }, process.env.JWT_SECRET, { expiresIn: "50d" });
 
             const {password,otp,createdAt,updatedAt, ...others} = user._doc;
-            res.status(200).json({ ...others, token });
+            return res.status(201).json({ ...others, token});
         } else {
             return res.status(404).json({ status: false, message: "OTP verification failed" });
         }
