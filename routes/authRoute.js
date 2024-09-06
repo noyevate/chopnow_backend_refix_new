@@ -4,7 +4,7 @@ const { createAccount, setPIN, login, validatePhone, validateEmail, resendOTP, c
 const router = express.Router();
 
 router.post('/create-account', createAccount);
-router.get('/create-restaurant-account', createRestaurantAccount);
+router.post('/create-restaurant-account', createRestaurantAccount);
 router.post('/set-pin/:id/:pin', setPIN);
 router.post('/resend-otp/:id', resendOTP);
 router.post('/login/:phone/:pin', login);

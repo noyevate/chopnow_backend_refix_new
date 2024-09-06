@@ -77,7 +77,7 @@ async function createAccount(req, res) {
 
     // Send OTP
 
-    // await sendOTP(formattedPhone, otp);
+     await sendOTP(formattedPhone, otp);
 
     res.status(201).json({
       status: true,
@@ -140,7 +140,7 @@ async function createRestaurantAccount(req, res) {
 
     // Send OTP
 
-    // await sendOTP(formattedPhone, otp);
+     await sendOTP(formattedPhone, otp);
 
     res.status(201).json({
       status: true,
