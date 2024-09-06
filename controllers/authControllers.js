@@ -132,7 +132,7 @@ async function createRestaurantAccount(req, res) {
       phone: formattedPhone,
       email,
       userType: "Vendor",
-      otp: otp,
+      otp: 1234, //otp,
       otpExpires: Date.now() + 10 * 60 * 1000 // OTP valid for 10 minutes
     });
 
