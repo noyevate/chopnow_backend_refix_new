@@ -5,8 +5,8 @@ const dotenv = require('dotenv')
 dotenv.config()
 
 // Use environment variables or replace with actual credentials
-const accountSid = process.env.TWILIO_ACCOUNT_SID     //"ACfa812682c36d18e43bf7d1c17a4f17d6";
-const authToken =   process.env.TWILIO_AUTH_TOKEN                                   //"a953dabfe235bcb2cb252483ae1d8a76";
+const accountSid =     "ACfa812682c36d18e43bf7d1c17a4f17d6";
+const authToken =      "a953dabfe235bcb2cb252483ae1d8a76";
 const client = twilio(accountSid, authToken);
 
 function sendOTP(phoneNumber, otp) {
