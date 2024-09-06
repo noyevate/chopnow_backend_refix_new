@@ -96,6 +96,69 @@ async function createAccount(req, res) {
   }
 }
 
+async function createRestaurantAccount(req, res) {
+  const { first_name, last_name, phone, email, password } = req.body;
+
+  try {
+    // Validate email
+    const emailValidation = await validateEmail(email);
+    if (!emailValidation.status) {
+      return res.status(400).json(emailValidation);
+    }
+
+    // Validate phone
+    const phoneRegex = /^(?:0)?[789]\d{9}$/;
+    if (!phoneRegex.test(phone)) {
+      return res.json({ status: false, message: 'Phone number Invalid.' });
+    }
+
+    // Prepend "+234" to the phone number if it doesn't already start with it
+    const formattedPhone = phone.startsWith('+234') ? phone : '+234' + phone.replace(/^0/, '');
+    const nwePassword = await hashPIN(password);
+
+    const existingUser = await User.findOne({ phone: formattedPhone });
+    if (existingUser) {
+      return res.json({ status: false, message: 'Phone number already exists. Login to continue' });
+    }
+
+    // Generate OTP
+    const otp = generateOTP();
+
+    // Create new user
+    const user = new User({
+      first_name,
+      last_name,
+      password: nwePassword,
+      phone: formattedPhone,
+      email,
+      userType: "Vendor",
+      otp: otp,
+      otpExpires: Date.now() + 10 * 60 * 1000 // OTP valid for 10 minutes
+    });
+
+    await user.save();
+
+    // Send OTP
+
+    // await sendOTP(formattedPhone, otp);
+
+    res.status(201).json({
+      status: true,
+      message: 'Account created. Verify your phone number.',
+      user: {
+        id: user._id,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        phone: user.phone,
+        email: user.email
+      }
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error });
+  }
+}
+
 
 
 async function setPIN(req, res) {
@@ -190,4 +253,4 @@ async function resendOTP(req, res) {
   }
 }
 
-module.exports = { createAccount, login, setPIN, validateEmail, validatePhone, resendOTP };
+module.exports = { createAccount, login, setPIN, validateEmail, validatePhone, resendOTP, createRestaurantAccount };
