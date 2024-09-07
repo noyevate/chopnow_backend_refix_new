@@ -2,11 +2,10 @@ const Cart = require("../models/Cart");
 
 async function addProductToCart(req, res) {
     const userId = req.user.id;
-    const { productId, additives, totalPrice, Tquantity } = req.body;
+    const { productId, additives, totalPrice } = req.body;
 
     // Convert totalPrice and Tquantity to numbers
     const parsedTotalPrice = Number(totalPrice);
-    const parsedTquantity = Number(Tquantity);
 
     if (isNaN(parsedTotalPrice)) {
         return res.status(400).json({ status: false, message: "Invalid data type for totalPrice or Tquantity" });
@@ -19,9 +18,7 @@ async function addProductToCart(req, res) {
 
         if (existingProduct) {
             // Update totalPrice and Tquantity
-            existingProduct.totalPrice += parsedTotalPrice * parsedTquantity;
-            existingProduct.Tquantity += parsedTquantity;
-
+            existingProduct.totalPrice += parsedTotalPrice 
             await existingProduct.save();
             return res.status(200).json({ status: true, count: count });
         } else {
@@ -31,7 +28,6 @@ async function addProductToCart(req, res) {
                 productId: productId,
                 additives: additives,
                 totalPrice: parsedTotalPrice,
-                Tquantity: parsedTquantity
             });
             await newCartItem.save();
 
