@@ -9,9 +9,7 @@ async function addProductToCart(req, res) {
         count = await Cart.countDocuments({ userId });
 
         if (existingProduct) {
-            existingProduct.totalPrice += totalPrice * 1;
-
-            await existingProduct.save();
+            
             return res.status(200).json({ status: true, count: count })
         } else {
             const newCartItem = new Cart({
