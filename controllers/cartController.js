@@ -2,40 +2,31 @@ const Cart = require("../models/Cart");
 
 async function addProductToCart(req, res) {
     const userId = req.user.id;
-    const { productId, additives, totalPrice } = req.body;
-
-    // Convert totalPrice and Tquantity to numbers
-    const parsedTotalPrice = Number(totalPrice);
-
-    if (isNaN(parsedTotalPrice)) {
-        return res.status(400).json({ status: false, message: "Invalid data type for totalPrice or Tquantity" });
-    }
-
+    const { productId, additives, totalPrice} = req.body;
     let count;
     try {
         const existingProduct = await Cart.findOne({ userId: userId, productId: productId });
         count = await Cart.countDocuments({ userId });
 
         if (existingProduct) {
-            // Update totalPrice and Tquantity
-            existingProduct.totalPrice += parsedTotalPrice 
+            existingProduct.totalPrice += totalPrice * 1;
+
             await existingProduct.save();
-            return res.status(200).json({ status: true, count: count });
+            return res.status(200).json({ status: true, count: count })
         } else {
-            // Create new cart item
             const newCartItem = new Cart({
                 userId: userId,
                 productId: productId,
                 additives: additives,
-                totalPrice: parsedTotalPrice,
+                totalPrice: totalPrice,
             });
-            await newCartItem.save();
+            await newCartItem.save()
 
             count = await Cart.countDocuments({ userId: userId });
-            return res.status(201).json({ status: true, count: count });
+            return res.status(201).json({ status: true, count: count })
         }
     } catch (error) {
-        return res.status(500).json({ status: false, message: error.message });
+        return res.status(500).json({ status: false, message: error.message })
     }
 }
 
