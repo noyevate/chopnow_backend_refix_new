@@ -9,8 +9,14 @@ async function addProductToCart(req, res) {
         count = await Cart.countDocuments({ userId });
 
         if (existingProduct) {
+             // Logic to update the existing product in the cart
+             existingProduct.totalPrice += totalPrice; // Update the total price by adding the new price
+             existingProduct.additives.push(...additives); // Merge the new additives with the existing ones
+ 
+             await existingProduct.save(); // Save the updated cart item
+ 
+             return res.status(200).json({ status: true, message: "Product quantity updated in cart", count: count });
             
-            return res.status(200).json({ status: true, count: count })
         } else {
             const newCartItem = new Cart({
                 userId: userId,
