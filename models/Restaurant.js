@@ -8,7 +8,7 @@ const RestaurantSchema = new mongoose.Schema({
     pickup: { type: Boolean, default: true },
     delivery: { type: Boolean, default: true },
     isAvailabe: { type: Boolean, default: true },
-    owner: { type: String, default: true },
+    phone: { type: String, default: true },
     code: { type: String, required: true },
     logoUrl: { type: String, required: true },
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'Vendor', required: true },

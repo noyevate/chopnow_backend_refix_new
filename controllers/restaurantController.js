@@ -2,8 +2,8 @@ const Restaurant = require("../models/Restaurant");
 
 
 async function addRestaurant(req, res) {
-    const { title, time, imageUrl, owner, code, logoUrl, coords } = req.body;
-    if (!title || !time || !imageUrl || !owner || !code || !logoUrl || !coords
+    const { title, time, imageUrl, phone, code, logoUrl, coords } = req.body;
+    if (!title || !time || !imageUrl || !phone || !code || !logoUrl || !coords
         || !coords.latitude || !coords.longitude || !coords.address || !coords.title) {
         return res.status(400).json({ status: false, message: "You have a missing field" });
     };
