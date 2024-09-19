@@ -70,28 +70,28 @@ async function getOrdersByRestaurantId(req, res) {
 
 
 async function updateOrderStatus(req, res) {
-    const { orderId, status } = req.params;
+    const { orderId, orderStatus } = req.params; // Access orderStatus from params
+
+    // Optional: You can validate orderStatus if you want to restrict it to certain values
+    if (!orderStatus) {
+        return res.status(400).json({ status: false, message: "Order status is required" });
+    }
 
     try {
-        const updatedOrder = await Order.findByIdAndUpdate(
-            orderId,
-            { orderStatus: status },
-            { new: true, runValidators: true } // Ensure validation rules are applied
-        );
+        const order = await Order.findByIdAndUpdate(orderId, { orderStatus }, { new: true });
 
-        if (!updatedOrder) {
+        if (!order) {
             return res.status(404).json({ status: false, message: "Order not found" });
         }
 
-        res.status(200).json({
-            status: true,
-            message: "Order status updated successfully",
-            order: updatedOrder
-        });
+        res.status(201).json({ status: true, message: "Order status updated successfully", order });
     } catch (error) {
+        console.error("Update order status error:", error);
         res.status(500).json({ status: false, message: error.message });
     }
 }
+
+
 
 async function getOrdersByStatusAndPayment(req, res) {
     const userId = req.user.id
