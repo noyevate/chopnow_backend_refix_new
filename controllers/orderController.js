@@ -47,7 +47,7 @@ async function getUserOrder(req, res) {
 
 async function getOrdersByRestaurantId(req, res) {
     const { restaurantId } = req.params;
-    const { orderStatus, paymentStatus } = req.query;
+    const { orderStatus, paymentStatus } = req.params;
 
     // Validate the required parameters
     if (!restaurantId || !orderStatus || !paymentStatus) {
