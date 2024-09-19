@@ -7,11 +7,11 @@ router.get("/", verifyTokenAndAuthorization,  orderController.getUserOrder);
 router.get("/user-order", verifyTokenAndAuthorization,  orderController.getAllUserOrders);
 router.get("/user-order-history", verifyTokenAndAuthorization,  orderController.getDeliveredAndCancelledOrders);
 
-router.get("/status-and-payment", verifyTokenAndAuthorization,  orderController.getOrdersByStatusAndPayment);
+router.get("/status-and-payment",  orderController.getOrdersByStatusAndPayment);
 
 router.get("/:restaurantId", verifyTokenAndAuthorization,  orderController.getOrdersByRestaurantId);
 router.patch('/updateOrderStatus/:orderId', verifyTokenAndAuthorization,  orderController.updateOrderStatus);
-router.get("/status-and-payment", verifyTokenAndAuthorization,  orderController.getOrdersByStatusAndPayment);
+// router.get("/status-and-payment", verifyTokenAndAuthorization,  orderController.getOrdersByStatusAndPayment);
 
 
 module.exports = router;
