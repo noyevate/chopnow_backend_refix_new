@@ -71,7 +71,7 @@ async function getOrdersByRestaurantId(req, res) {
 
 async function updateOrderStatus(req, res) {
     const { orderId } = req.params;
-    const { status } = req.body;
+    const { status } = req.params;
 
     try {
         const order = await Order.findByIdAndUpdate(orderId, { orderStatus: status }, { new: true });
