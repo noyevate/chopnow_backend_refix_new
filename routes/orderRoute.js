@@ -9,7 +9,12 @@ router.get("/user-order-history", verifyTokenAndAuthorization,  orderController.
 
 router.get("/status-and-payment", verifyTokenAndAuthorization,  orderController.getOrdersByStatusAndPayment);
 
-router.get("/:restaurantId", verifyTokenAndAuthorization,  orderController.getOrdersByRestaurantId);
+router.get("/:restaurantId/:orderStatus/:paymentStatus", orderController.getOrdersByRestaurantId);
+
+// router.get("/:restaurantId/:orderStatus/:paymentStatus", verifyTokenAndAuthorization,  orderController.getOrdersByRestaurantId);
+
+
+
 router.patch('/updateOrderStatus/:orderId', verifyTokenAndAuthorization,  orderController.updateOrderStatus);
 // router.get("/status-and-payment", verifyTokenAndAuthorization,  orderController.getOrdersByStatusAndPayment);
 
