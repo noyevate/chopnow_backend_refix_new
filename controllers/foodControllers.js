@@ -288,16 +288,24 @@ async function searchRestaurantFood(req, res) {
 }
 
 async function fetchRestaurantCategories(req, res) {
-        const restaurantId = req.params
-        try {
-          const categories = await Food.find({ restaurant: restaurantId }).distinct('restaurant_category');
-          return categories;
-        } catch (error) {
-          console.error("Error fetching restaurant categories: ", error);
-          throw error;
-        }
-      };
-  
+    const { restaurantId } = req.params;
+
+    try {
+        // Convert restaurantId to ObjectId
+        const objectId = mongoose.Types.ObjectId(restaurantId);
+
+        // Find distinct restaurant categories for the restaurant
+        const categories = await Food.find({ restaurant: objectId }).distinct('restaurant_category');
+
+        // Return the categories as a response
+        return res.status(200).json(categories);
+    } catch (error) {
+        console.error("Error fetching restaurant categories: ", error);
+
+        // Return an error response
+        return res.status(500).json({ message: "Server error", error });
+    }
+}
 
 
 
