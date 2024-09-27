@@ -288,7 +288,7 @@ async function searchRestaurantFood(req, res) {
 }
 
 async function fetchRestaurantCategories(req, res) {
-    const getRestaurantCategories = async (restaurantId) => {
+        const restaurantId = req.params
         try {
           const categories = await Food.find({ restaurant: restaurantId }).distinct('restaurant_category');
           return categories;
@@ -297,7 +297,7 @@ async function fetchRestaurantCategories(req, res) {
           throw error;
         }
       };
-  }
+  
 
 
 
