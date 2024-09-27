@@ -292,10 +292,10 @@ async function fetchRestaurantCategories(req, res) {
 
     try {
         // Convert restaurantId to ObjectId
-        const objectId = mongoose.Types.ObjectId(restaurantId);
+        // const objectId = mongoose.Types.ObjectId(restaurantId);
 
         // Find distinct restaurant categories for the restaurant
-        const categories = await Food.find({ restaurant: objectId }).distinct('restaurant_category');
+        const categories = await Food.find({ restaurant: restaurantId }).distinct('restaurant_category');
 
         // Return the categories as a response
         return res.status(200).json(categories);
