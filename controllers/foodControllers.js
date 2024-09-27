@@ -287,5 +287,22 @@ async function searchRestaurantFood(req, res) {
     }
 }
 
+async function fetchRestaurantCategories(req, res) {
+    try {
+      // Fetch distinct restaurant categories from the Food collection
+      const categories = await Food.distinct('restaurant_category');
+      
+      if (categories.length > 0) {
+        res.status(200).json({ status: true, data: categories });
+      } else {
+        res.status(404).json({ status: false, message: 'No categories found' });
+      }
+    } catch (error) {
+      res.status(500).json({ status: false, message: error.message });
+    }
+  }
 
-module.exports = { addFood, getFoodById, getRandomFood, getFoodByCategoryAndCode, getFoodsByRestaurant, getallFoodsByCodee, searchFood, getRandomFoodByCodeAndCategory, getFoodByCategory, searchRestaurantFood, searchFoodAndRestaurant }
+
+
+
+module.exports = { addFood, fetchRestaurantCategories, getFoodById, getRandomFood, getFoodByCategoryAndCode, getFoodsByRestaurant, getallFoodsByCodee, searchFood, getRandomFoodByCodeAndCategory, getFoodByCategory, searchRestaurantFood, searchFoodAndRestaurant }
