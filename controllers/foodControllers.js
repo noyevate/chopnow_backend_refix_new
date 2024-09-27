@@ -288,18 +288,15 @@ async function searchRestaurantFood(req, res) {
 }
 
 async function fetchRestaurantCategories(req, res) {
-    try {
-      // Fetch distinct restaurant categories from the Food collection
-      const categories = await Food.distinct('restaurant_category');
-      
-      if (categories.length > 0) {
-        res.status(200).json({ status: true, data: categories });
-      } else {
-        res.status(404).json({ status: false, message: 'No categories found' });
-      }
-    } catch (error) {
-      res.status(500).json({ status: false, message: error.message });
-    }
+    const getRestaurantCategories = async (restaurantId) => {
+        try {
+          const categories = await Food.find({ restaurant: restaurantId }).distinct('restaurant_category');
+          return categories;
+        } catch (error) {
+          console.error("Error fetching restaurant categories: ", error);
+          throw error;
+        }
+      };
   }
 
 
