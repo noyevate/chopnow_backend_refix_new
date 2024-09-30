@@ -12,10 +12,8 @@ router.get("/random/:code", foodController.getRandomFood);
 router.get("/search/:search", foodController.searchFood);
 router.get("/search-food-restaurant/:search", foodController.searchFoodAndRestaurant);
 router.get("/:category/:code", foodController.getFoodByCategoryAndCode);
-
-
-
 router.get("/ByCode/:code", foodController.getallFoodsByCodee);
+router.get("/category/list/:category", foodController.fetchFoodByCategory);
 
 
 module.exports = router;

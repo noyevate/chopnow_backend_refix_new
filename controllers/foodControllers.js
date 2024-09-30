@@ -235,10 +235,12 @@ const getFoodByCategory = async (req, res) => {
     try {
         // Find foods matching the restaurantId and category
         const foodList = await Food.aggregate([
-            { $match: { 
-                restaurant: new mongoose.Types.ObjectId(restaurantId), 
-                restaurant_category: category 
-            }},
+            {
+                $match: {
+                    restaurant: new mongoose.Types.ObjectId(restaurantId),
+                    restaurant_category: category
+                }
+            },
             { $sample: { size: 50 } } // Sample 6 foods; adjust as needed
         ]);
 
@@ -257,7 +259,7 @@ async function searchRestaurantFood(req, res) {
     const { restaurantCategory, title, restaurant } = req.query;
 
     // Convert restaurant to ObjectId if it's a string representation
-    const restaurantId =  mongoose.Types.ObjectId.isValid(restaurant) ? new mongoose.Types.ObjectId(restaurant) : null;
+    const restaurantId = mongoose.Types.ObjectId.isValid(restaurant) ? new mongoose.Types.ObjectId(restaurant) : null;
 
     if (!restaurantId) {
         return res.status(400).json({ status: false, message: "Invalid restaurant ID" });
@@ -307,7 +309,31 @@ async function fetchRestaurantCategories(req, res) {
     }
 }
 
+async function fetchFoodByCategory(req, res) {
+    const { category } = req.params; // extract category instead of categoryid
+    console.log('Category ID:', category);
+
+    try {
+        // Find foods by category
+        const foods = await Food.find({ category });
+
+        // Always return an array, even if no food is found
+        if (!foods.length) {
+            return res.status(404).json([]); // Return an empty array with a 200 status code
+        }
+
+        // Return the foods found with a 200 status code
+        return res.status(200).json(foods);
+    } catch (error) {
+        // Handle any errors that may occur and send a 500 status code
+        console.error('Error fetching foods by category:', error);
+        return res.status(500).json({ message: 'Error fetching foods by category.', error: error.message });
+    }
+}
 
 
 
-module.exports = { addFood, fetchRestaurantCategories, getFoodById, getRandomFood, getFoodByCategoryAndCode, getFoodsByRestaurant, getallFoodsByCodee, searchFood, getRandomFoodByCodeAndCategory, getFoodByCategory, searchRestaurantFood, searchFoodAndRestaurant }
+
+
+
+module.exports = { addFood, fetchRestaurantCategories, getFoodById, getRandomFood, getFoodByCategoryAndCode, getFoodsByRestaurant, getallFoodsByCodee, searchFood, getRandomFoodByCodeAndCategory, getFoodByCategory, searchRestaurantFood, searchFoodAndRestaurant, fetchFoodByCategory }
