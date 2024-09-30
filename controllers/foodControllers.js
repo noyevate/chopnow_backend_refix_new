@@ -310,26 +310,33 @@ async function fetchRestaurantCategories(req, res) {
 }
 
 async function fetchFoodByCategory(req, res) {
-    const { category } = req.params; // extract category instead of categoryid
+    const { category } = req.params;
     console.log('Category ID:', category);
 
     try {
         // Find foods by category
         const foods = await Food.find({ category });
 
-        // Always return an array, even if no food is found
         if (!foods.length) {
-            return res.status(404).json([]); // Return an empty array with a 200 status code
+            return res.status(200).json([]); // Return empty array if no foods found
         }
 
-        // Return the foods found with a 200 status code
-        return res.status(200).json(foods);
+        // Manually include the __v field in each document
+        const foodsWithVersion = foods.map(food => {
+            const foodObj = food.toObject(); // Convert Mongoose document to plain object
+            foodObj.__v = food.__v; // Manually add __v back to the object
+            return foodObj;
+        });
+
+        return res.status(200).json(foodsWithVersion); // Return foods including __v
     } catch (error) {
-        // Handle any errors that may occur and send a 500 status code
         console.error('Error fetching foods by category:', error);
         return res.status(500).json({ message: 'Error fetching foods by category.', error: error.message });
     }
 }
+
+
+
 
 
 
