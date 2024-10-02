@@ -12,6 +12,7 @@ const RatingRoute = require("./routes/ratingRoute");
 const AddressRoute = require("./routes/addressRoute");
 const CartRoute = require("./routes/cartRoute");
 const OrderRoute = require("./routes/orderRoute");
+const AdditiveRoute = require("./routes/additiveRoute");
 
 
 dotenv.config();
@@ -34,5 +35,6 @@ app.use('/api/rating', RatingRoute);
 app.use('/api/address', AddressRoute);
 app.use('/api/cart', CartRoute);
 app.use('/api/order', OrderRoute);
+app.use('/api/additive', AdditiveRoute);
 
 app.listen(port, () => console.log(`chopnow backend services is running on port: ${port}`))
