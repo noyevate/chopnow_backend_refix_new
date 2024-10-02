@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const AdditiveSchema = new mongoose.Schema({
-    userId: {type: String, required:true},
+    restaurantId: {type: String, required:true},
     title: {type: String, required:true},
     max: {type: Number, required:false},
     min: {type: Number, required:false},
