@@ -335,6 +335,26 @@ async function fetchFoodByCategory(req, res) {
     }
 }
 
+async function fetchRestaurantAdditives(req, res) {
+    const { restaurantId } = req.params;
+
+    try {
+        // Convert restaurantId to ObjectId
+        // const objectId = mongoose.Types.ObjectId(restaurantId);
+
+        // Find distinct restaurant categories for the restaurant
+        console.log('restaurantId ID:', restaurantId);
+        const additives = await Food.find({ restaurant: restaurantId }).distinct('additive');
+
+        // Return the categories as a response
+        return res.status(200).json(additives);
+    } catch (error) {
+        console.error("Error fetching restaurant additives: ", error);
+
+        // Return an error response
+        return res.status(500).json({ message: "Server error", error });
+    }
+}
 
 
 
@@ -343,4 +363,7 @@ async function fetchFoodByCategory(req, res) {
 
 
 
-module.exports = { addFood, fetchRestaurantCategories, getFoodById, getRandomFood, getFoodByCategoryAndCode, getFoodsByRestaurant, getallFoodsByCodee, searchFood, getRandomFoodByCodeAndCategory, getFoodByCategory, searchRestaurantFood, searchFoodAndRestaurant, fetchFoodByCategory }
+
+
+
+module.exports = { addFood, fetchRestaurantCategories, getFoodById, getRandomFood, getFoodByCategoryAndCode, getFoodsByRestaurant, getallFoodsByCodee, searchFood, getRandomFoodByCodeAndCategory, getFoodByCategory, searchRestaurantFood, searchFoodAndRestaurant, fetchFoodByCategory, fetchRestaurantAdditives }

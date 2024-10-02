@@ -5,6 +5,7 @@ const {verifyVendor} = require('../middlewares/verifyToken');
 router.post("/", foodController.addFood);
 router.get('/foods-by-category/:restaurantId/:category', foodController.getFoodByCategory);
 router.get('/categoriesList/:restaurantId', foodController.fetchRestaurantCategories);
+router.get("/additive/:restaurantId", foodController.fetchRestaurantAdditives);
 router.get('/search-restaurant-food', foodController.searchRestaurantFood)
 router.get("/:id",foodController.getFoodById);
 router.get("/restaurant-food/:id", foodController.getFoodsByRestaurant);
@@ -14,6 +15,7 @@ router.get("/search-food-restaurant/:search", foodController.searchFoodAndRestau
 router.get("/:category/:code", foodController.getFoodByCategoryAndCode);
 router.get("/ByCode/:code", foodController.getallFoodsByCodee);
 router.get("/category/list/:category", foodController.fetchFoodByCategory);
+
 
 
 module.exports = router;
