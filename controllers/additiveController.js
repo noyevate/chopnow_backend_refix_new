@@ -1,5 +1,4 @@
 const Additive = require("../models/Additive");
-const Restaurant = require("../models/Restaurant");
 const mongoose = require('mongoose');
 
 async function addAdditive(req, res) {
@@ -10,7 +9,7 @@ async function addAdditive(req, res) {
 
     try {
         // Add food
-        const newFood = new Additive(req.body);
+        const newAdditive = new Additive(req.body);
         await newAdditive.save();
         
 
