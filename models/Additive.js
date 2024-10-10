@@ -6,7 +6,6 @@ const AdditiveSchema = new mongoose.Schema({
     additiveName: {type: String, required:true},
     max: {type: Number, required:false},
     min: {type: Number, required:false},
-    name: {type: String, required: true},
     price: {type: Number, required:true},
     foods: { type: Array, default: [] },
     isAvailable: {type: Boolean, default:true},
