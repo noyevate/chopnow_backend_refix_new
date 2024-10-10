@@ -11,14 +11,7 @@ async function addAdditive(req, res) {
         // Add food
         const newAdditive = new Additive(req.body);
         await newAdditive.save();
-        console.log(newAdditive.restaurantId)
-        console.log(newAdditive.additiveTitle)
-        console.log(newAdditive.additiveName)
-        console.log(newAdditive.max)
-        console.log(newAdditive.min)
-        console.log(newAdditive.price)
-        console.log(newAdditive.foods)
-        console.log(newAdditive.isAvailable)
+       
         
 
         res.status(201).json({ status: true, message: "additive has been created successfully" });
