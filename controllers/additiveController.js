@@ -8,7 +8,6 @@ async function addAdditive(req, res) {
     // } 
 
     try {
-        // Add food
         const newAdditive = new Additive(req.body);
         await newAdditive.save();
        
@@ -21,4 +20,17 @@ async function addAdditive(req, res) {
 }
 
 
-module.exports = { addAdditive}
+async function getAdditivesById(req, res) {
+    const { id } = req.params;
+    try {
+        const additives = await Additive.find({ restaurantId: id }); // Using lean() to return a plain JavaScript object
+        if (!additives) {
+            return res.status(404).json({ status: false, message: 'Additives not found' });
+        }
+        res.status(200).json(additives);
+    } catch (error) {
+        res.status(500).json({ status: false, message: error.message });
+    }
+}
+
+module.exports = { addAdditive, getAdditivesById}
