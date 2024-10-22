@@ -33,4 +33,31 @@ async function getAdditivesById(req, res) {
     }
 }
 
-module.exports = { addAdditive, getAdditivesById}
+async function editAdditive(req, res) {
+    const { additiveId } = req.params; // Get the additive ID from the URL
+    const { additiveTitle, min, max } = req.body; // Get the updated fields from the request body
+  
+    try {
+      // Find the additive by its ID and update the fields
+      const updatedAdditive = await Additive.findByIdAndUpdate(
+        additiveId,
+        {
+          additiveTitle: additiveTitle || undefined, // Update title if provided
+          min: min !== undefined ? min : undefined, // Update min if provided
+          max: max !== undefined ? max : undefined, // Update max if provided
+        },
+        { new: true, runValidators: true } // Return the updated document and validate inputs
+      );
+  
+      if (!updatedAdditive) {
+        return res.status(404).json({ message: 'Additive not found' });
+      }
+  
+      // Return the updated additive
+      res.status(201).json({ status: true, message: 'Additive updated successfully'});
+    } catch (error) {
+      res.status(500).json({ status: true, message: 'Internal server error' });
+    }
+  };
+
+module.exports = { addAdditive, getAdditivesById, editAdditive}
