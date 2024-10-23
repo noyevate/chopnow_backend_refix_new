@@ -78,7 +78,7 @@ async function updateOptionInAdditive(req, res) {
       const { additiveId, optionId } = req.params;
 
       // Extract updatedData from the request body
-      const { name, price } = req.body;  // Destructure the required fields directly
+      const { name, price, isAvailable } = req.body;  // Destructure the required fields directly
 
       // Find the additive by additiveId and update the specific option in the options array
       const updatedAdditive = await Additive.findOneAndUpdate(
@@ -87,7 +87,7 @@ async function updateOptionInAdditive(req, res) {
               $set: {
                   'options.$.additiveName': name,   // Update name in the array
                   'options.$.price': price,  // Update price in the array
-                  'options.$.isAvailable': isAvalable
+                  'options.$.isAvailable': isAvailable
               }
           },
           { new: true, runValidators: true } // Return the updated document and run validators
@@ -102,7 +102,7 @@ async function updateOptionInAdditive(req, res) {
       res.status(201).json({ status: true, message: 'Option updated successfully'});
   } catch (error) {
       // Catch any errors and send a 500 response
-      res.status(500).json({ status: false, message: `Error updating option` });
+      res.status(500).json({ status: false, message: `Error updating option: ${error.message}` });
   }
 }
 
