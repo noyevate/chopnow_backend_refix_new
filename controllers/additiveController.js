@@ -86,7 +86,8 @@ async function updateOptionInAdditive(req, res) {
           {
               $set: {
                   'options.$.additiveName': name,   // Update name in the array
-                  'options.$.price': price  // Update price in the array
+                  'options.$.price': price,  // Update price in the array
+                  'options.$.isAvailable': isAvalable
               }
           },
           { new: true, runValidators: true } // Return the updated document and run validators
@@ -105,5 +106,56 @@ async function updateOptionInAdditive(req, res) {
   }
 }
 
+async function updateAdditiveAvailability (req, res) {
+  try {
+    // Extract additiveId and new availability status from request
+    const { additiveId, isAvailable } = req.params;
 
-module.exports = { addAdditive, getAdditivesById, editAdditive, deleteAdditive, updateOptionInAdditive}
+    // Find the additive by its ID and update the isAvailable field
+    const updatedAdditive = await Additive.findByIdAndUpdate(
+      additiveId, // Find by additiveId
+      { $set: { isAvailable: isAvailable } }, // Update the isAvailable field
+      { new: true, runValidators: true } // Return the updated document and run validators
+    );
+
+    if (!updatedAdditive) {
+      return res.status(404).json({ status: false, message: 'Additive not found' });
+    }
+
+    // Return the updated additive
+    res.status(200).json({ status: true, message: 'Additive availability updated successfully' });
+  } catch (error) {
+    res.status(500).json({ status: false, message: `Error updating availability` });
+  }
+};
+
+// const deleteOptionFromAdditive = async (req, res) => {
+//   try {
+//     // Extract additiveId and optionId from request parameters
+//     const { additiveId, optionId } = req.params;
+
+//     // Find the additive by additiveId and remove the specific option from the array
+//     const updatedAdditive = await Additive.findByIdAndUpdate(
+//       additiveId,
+//       {
+//         $pull: { options: { _id: optionId } } // Pull the option with the matching optionId
+//       },
+//       { new: true } // Return the updated document
+//     );
+
+//     if (!updatedAdditive) {
+//       return res.status(404).json({ status: false, message: 'Additive or option not found' });
+//     }
+
+//     // Return success response
+//     res.status(200).json({ status: true, message: 'Option deleted successfully', data: updatedAdditive });
+//   } catch (error) {
+//     res.status(500).json({ status: false, message: `Error deleting option: ${error.message}` });
+//   }
+// };
+
+
+
+
+
+module.exports = { addAdditive, getAdditivesById, editAdditive, deleteAdditive, updateOptionInAdditive, updateAdditiveAvailability}
