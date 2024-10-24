@@ -129,33 +129,33 @@ async function updateAdditiveAvailability (req, res) {
   }
 };
 
-// const deleteOptionFromAdditive = async (req, res) => {
-//   try {
-//     // Extract additiveId and optionId from request parameters
-//     const { additiveId, optionId } = req.params;
+async function deleteOptionFromAdditive(req, res)  {
+  try {
+    // Extract additiveId and optionId from request parameters
+    const { additiveId, optionId } = req.params;
 
-//     // Find the additive by additiveId and remove the specific option from the array
-//     const updatedAdditive = await Additive.findByIdAndUpdate(
-//       additiveId,
-//       {
-//         $pull: { options: { _id: optionId } } // Pull the option with the matching optionId
-//       },
-//       { new: true } // Return the updated document
-//     );
+    // Find the additive by additiveId and remove the specific option from the array
+    const updatedAdditive = await Additive.findByIdAndUpdate(
+      additiveId,
+      {
+        $pull: { options: { _id: optionId } } // Pull the option with the matching optionId
+      },
+      { new: true } // Return the updated document
+    );
 
-//     if (!updatedAdditive) {
-//       return res.status(404).json({ status: false, message: 'Additive or option not found' });
-//     }
+    if (!updatedAdditive) {
+      return res.status(404).json({ status: false, message: 'Additive or option not found' });
+    }
 
-//     // Return success response
-//     res.status(200).json({ status: true, message: 'Option deleted successfully', data: updatedAdditive });
-//   } catch (error) {
-//     res.status(500).json({ status: false, message: `Error deleting option: ${error.message}` });
-//   }
-// };
-
-
+    // Return success response
+    res.status(200).json({ status: true, message: 'Option deleted successfully', data: updatedAdditive });
+  } catch (error) {
+    res.status(500).json({ status: false, message: `Error deleting option: ${error.message}` });
+  }
+};
 
 
 
-module.exports = { addAdditive, getAdditivesById, editAdditive, deleteAdditive, updateOptionInAdditive, updateAdditiveAvailability}
+
+
+module.exports = { addAdditive, getAdditivesById, editAdditive, deleteAdditive, updateOptionInAdditive, updateAdditiveAvailability, deleteOptionFromAdditive}
