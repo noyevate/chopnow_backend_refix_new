@@ -106,28 +106,58 @@ async function updateOptionInAdditive(req, res) {
   }
 }
 
-async function updateAdditiveAvailability (req, res) {
+// async function updateAdditiveAvailability(req, res) {
+//   try {
+//     // Extract additiveId and isAvailable from request params
+//     const { additiveId, isAvailable } = req.params;
+
+//     // Convert isAvailable from string to boolean
+//     const availabilityStatus = isAvailable === 'true'; // If 'true', set to true, otherwise false
+
+//     // Find the additive by its ID and update the isAvailable field
+//     const updatedAdditive = await Additive.findByIdAndUpdate(
+//       additiveId, // Find by additiveId
+//       { $set: { isAvailable: availabilityStatus } }, // Update the isAvailable field
+//       { new: true, runValidators: true } // Return the updated document and run validators
+//     );
+
+//     // Check if the additive was found and updated
+//     if (!updatedAdditive) {
+//       return res.status(404).json({ status: false, message: 'Additive not found' });
+//     }
+
+//     // Return success response with the updated additive
+//     res.status(200).json({ status: true, message: 'Additive availability updated successfully', data: updatedAdditive });
+//   } catch (error) {
+//     // Handle any errors during the update
+//     res.status(500).json({ status: false, message: `Error updating availability: ${error.message}` });
+//   }
+// }
+
+
+async function updateAdditiveAvailability(req, res) {
   try {
-    // Extract additiveId and new availability status from request
-    const { additiveId, isAvailable } = req.params;
+      const additiveId = req.params.id;
+      const additive = await Restaurant.findById(additiveId);
 
-    // Find the additive by its ID and update the isAvailable field
-    const updatedAdditive = await Additive.findByIdAndUpdate(
-      additiveId, // Find by additiveId
-      { $set: { isAvailable: isAvailable } }, // Update the isAvailable field
-      { new: true, runValidators: true } // Return the updated document and run validators
-    );
+      if (!additive) {
+          return res.status(404).send({ message: 'Additive not found' });
+      }
 
-    if (!updatedAdditive) {
-      return res.status(404).json({ status: false, message: 'Additive not found' });
-    }
+      additive.isAvailabe = !additive.isAvailabe;
 
-    // Return the updated additive
-    res.status(200).json({ status: true, message: 'Additive availability updated successfully' });
+      const updatedAdditive = await Restaurant.findByIdAndUpdate(
+          additiveId,
+          { isAvailabe: additive.isAvailabe },
+          { new: true, runValidators: true }
+      );
+
+      res.status(200).json({ status: true, message: 'Additive availability updated successfully', data: updatedAdditive });
   } catch (error) {
-    res.status(500).json({ status: false, message: `Error updating availability` });
+      res.status(500).send({ message: 'Internal server error', error })
   }
-};
+}
+
 
 async function deleteOptionFromAdditive(req, res)  {
   try {
