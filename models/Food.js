@@ -13,7 +13,9 @@ const FoodSchema = new mongoose.Schema({
     ratingCount: {type: String, default: 267},
     description: {type: String, required:true},
     price: {type: Number, required:true},
+    priceDescription: {type: String, required:false},
     additive: {type: Array, default:[]},
+    pack: {type: Array, default:[]},
     imageUrl: {type: Array, required:true},
     restaurant_category: {type: String, required:true},
 
