@@ -3,9 +3,7 @@ const mongoose = require('mongoose');
 
 async function addAdditive(req, res) {
   const { restaurantId, additiveTitle, additiveName, max, min, foods, isAvailable, price, } = req.body;
-  // if (restaurantId || additiveTitle || max || min || additiveName || foods || isAvailable || price) {
-  //     return res.status(400).json({ status: false, message: "You have a missing field" });
-  // } 
+  
 
   try {
     const newAdditive = new Additive(req.body);
@@ -106,69 +104,78 @@ async function updateOptionInAdditive(req, res) {
   }
 }
 
-// async function updateAdditiveAvailability(req, res) {
-//   try {
-//     // Extract additiveId and isAvailable from request params
-//     const { additiveId, isAvailable } = req.params;
-
-//     // Convert isAvailable from string to boolean
-//     const availabilityStatus = isAvailable === 'true'; // If 'true', set to true, otherwise false
-
-//     // Find the additive by its ID and update the isAvailable field
-//     const updatedAdditive = await Additive.findByIdAndUpdate(
-//       additiveId, // Find by additiveId
-//       { $set: { isAvailable: availabilityStatus } }, // Update the isAvailable field
-//       { new: true, runValidators: true } // Return the updated document and run validators
-//     );
-
-//     // Check if the additive was found and updated
-//     if (!updatedAdditive) {
-//       return res.status(404).json({ status: false, message: 'Additive not found' });
-//     }
-
-//     // Return success response with the updated additive
-//     res.status(200).json({ status: true, message: 'Additive availability updated successfully', data: updatedAdditive });
-//   } catch (error) {
-//     // Handle any errors during the update
-//     res.status(500).json({ status: false, message: `Error updating availability: ${error.message}` });
-//   }
-// }
-
 
 async function updateAdditiveAvailability(req, res) {
   try {
-      const additiveId = req.params.id;
-      const additive = await Restaurant.findById(additiveId);
+    const { id: additiveId } = req.params; // Extract additiveId from URL params
 
-      if (!additive) {
-          return res.status(404).send({ message: 'Additive not found' });
-      }
+    // Find the additive by its ID
+    const additive = await Additive.findById(additiveId);
 
-      additive.isAvailabe = !additive.isAvailabe;
+    if (!additive) {
+      return res.status(404).json({ status: false, message: 'Additive not found' });
+    }
 
-      const updatedAdditive = await Restaurant.findByIdAndUpdate(
-          additiveId,
-          { isAvailabe: additive.isAvailabe },
-          { new: true, runValidators: true }
-      );
+    // Toggle isAvailable value
+    additive.isAvailable = !additive.isAvailable;
 
-      res.status(200).json({ status: true, message: 'Additive availability updated successfully', data: updatedAdditive });
+    // Save the updated additive
+    const updatedAdditive = await additive.save();
+
+    res.status(200).json({
+      status: true,
+      message: 'Additive availability updated successfully',
+      data: updatedAdditive
+    });
   } catch (error) {
-      res.status(500).send({ message: 'Internal server error', error })
+    res.status(500).json({
+      status: false,
+      message: `Error updating availability: ${error.message}`
+    });
   }
 }
 
 
-async function deleteOptionFromAdditive(req, res)  {
+
+// async function deleteOptionFromAdditive(req, res)  {
+//   try {
+//     // Extract additiveId and optionId from request parameters
+//     const { additiveId, optionId } = req.params;
+
+//     // Find the additive by additiveId and remove the specific option from the array
+//     const updatedAdditive = await Additive.findByIdAndUpdate(
+//       additiveId,
+//       {
+//         $pull: { options: { _id: optionId } } // Pull the option with the matching optionId
+//       },
+//       { new: true } // Return the updated document
+//     );
+
+//     if (!updatedAdditive) {
+//       return res.status(404).json({ status: false, message: 'Additive or option not found' });
+//     }
+
+//     // Return success response
+//     res.status(200).json({ status: true, message: 'Option deleted successfully', data: updatedAdditive });
+//   } catch (error) {
+//     res.status(500).json({ status: false, message: `Error deleting option: ${error.message}` });
+//   }
+// };
+
+
+async function deleteOptionFromAdditive(req, res) {
   try {
     // Extract additiveId and optionId from request parameters
     const { additiveId, optionId } = req.params;
+
+    // Ensure optionId is cast to ObjectId
+    const objectIdOptionId = mongoose.Types.ObjectId(optionId);
 
     // Find the additive by additiveId and remove the specific option from the array
     const updatedAdditive = await Additive.findByIdAndUpdate(
       additiveId,
       {
-        $pull: { options: { _id: optionId } } // Pull the option with the matching optionId
+        $pull: { options: { _id: objectIdOptionId } } // Pull the option with the matching optionId
       },
       { new: true } // Return the updated document
     );
