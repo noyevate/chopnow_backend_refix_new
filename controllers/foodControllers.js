@@ -5,7 +5,7 @@ const mongoose = require('mongoose');
 
 async function addFood(req, res) {
     const { title, foodTags, category, restaurant_category, code, restaurant, description, time, price, additive, imageUrl } = req.body;
-    if (!title || !foodTags || !category || !code || !restaurant || !description || !time || !price || !additive || !imageUrl || !restaurant_category) {
+    if (!title || !foodTags || !category || !code || !restaurant || !description || !time || !price || !additive || !imageUrl || !restaurant_category || !restaurantCategoryAvailable) {
         return res.status(400).json({ status: false, message: "You have a missing field" });
     }
 
@@ -361,9 +361,74 @@ async function fetchRestaurantAdditives(req, res) {
 
 
 
+ async function filteredFoodByRestaurantCategory (req, res)  {
+    const { restaurantId } = req.params;
+    console.log("Received restaurantId:", restaurantId); // Debugging line
+
+
+    // Validate the restaurantId format
+    if (!mongoose.Types.ObjectId.isValid(restaurantId)) {
+        return res.status(400).json({ message: "Invalid restaurant ID format." });
+    }
+
+    try {
+        const foods = await Food.aggregate([
+            // Match by restaurant ID
+            { $match: { restaurant: new mongoose.Types.ObjectId(restaurantId) } },
+
+            // Group by restaurant_category and restaurantCategoryAvailable
+            {
+                $group: {
+                    _id: {
+                        categoryId: "$_id",  // Add category _id here
+                        restaurant_category: "$restaurant_category",
+                        restaurantCategoryAvailable: "$restaurantCategoryAvailable"
+                    },
+                    items: {
+                        $push: {
+                            title: "$title",
+                            time: "$time",
+                            foodTags: "$foodTags",
+                            category: "$category",
+                            foodType: "$foodType",
+                            code: "$code",
+                            isAvailable: "$isAvailable",
+                            restaurant: "$restaurant",
+                            rating: "$rating",
+                            ratingCount: "$ratingCount",
+                            description: "$description",
+                            price: "$price",
+                            priceDescription: "$priceDescription",
+                            additive: "$additive",
+                            pack: "$pack",
+                            imageUrl: "$imageUrl"
+                        }
+                    }
+                }
+            },
+            {
+                $project: {
+                    _id: "$_id.categoryId",  // Include the category _id as a separate field
+                    restaurant_category: "$_id.restaurant_category",
+                    restaurantCategoryAvailable: "$_id.restaurantCategoryAvailable",
+                    items: 1
+                }
+            }
+        ]);
+
+        // Send the formatted response
+        res.status(200).json(foods);
+    } catch (error) {
+        console.error("Error fetching food by restaurant and category:", error);
+        res.status(500).json({ message: "An error occurred while fetching food data." });
+    }
+}
 
 
 
 
 
-module.exports = { addFood, fetchRestaurantCategories, getFoodById, getRandomFood, getFoodByCategoryAndCode, getFoodsByRestaurant, getallFoodsByCodee, searchFood, getRandomFoodByCodeAndCategory, getFoodByCategory, searchRestaurantFood, searchFoodAndRestaurant, fetchFoodByCategory, fetchRestaurantAdditives }
+
+
+
+module.exports = { addFood, fetchRestaurantCategories, getFoodById, getRandomFood, getFoodByCategoryAndCode, getFoodsByRestaurant, getallFoodsByCodee, searchFood, getRandomFoodByCodeAndCategory, getFoodByCategory, searchRestaurantFood, searchFoodAndRestaurant, fetchFoodByCategory, fetchRestaurantAdditives, filteredFoodByRestaurantCategory }

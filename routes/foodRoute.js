@@ -8,13 +8,16 @@ router.get('/categoriesList/:restaurantId', foodController.fetchRestaurantCatego
 router.get("/additive/:restaurantId", foodController.fetchRestaurantAdditives);
 router.get('/search-restaurant-food', foodController.searchRestaurantFood)
 router.get("/:id",foodController.getFoodById);
-router.get("/restaurant-food/:id", foodController.getFoodsByRestaurant);
+router.get("/restaurant-food/:restaurantId", foodController.filteredFoodByRestaurantCategory);
 router.get("/random/:code", foodController.getRandomFood);
 router.get("/search/:search", foodController.searchFood);
 router.get("/search-food-restaurant/:search", foodController.searchFoodAndRestaurant);
 router.get("/:category/:code", foodController.getFoodByCategoryAndCode);
 router.get("/ByCode/:code", foodController.getallFoodsByCodee);
 router.get("/category/list/:category", foodController.fetchFoodByCategory);
+
+
+// router.get("/restaurant-food/:id", foodController.getFoodsByRestaurant);
 
 
 
