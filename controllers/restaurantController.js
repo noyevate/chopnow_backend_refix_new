@@ -8,6 +8,16 @@ async function addRestaurant(req, res) {
     //     return res.status(400).json({ status: false, message: "You have a missing field" });
     // };
     try {
+
+        const existingRestaurant = await Restaurant.findOne({ $or: [{ userId }, { title }] });
+        
+        if (existingRestaurant) {
+            if (existingRestaurant.userId.toString() === userId) {
+                return res.status(400).json({ status: false, message: "User already has a restaurant" });
+            } else if (existingRestaurant.title === title) {
+                return res.status(400).json({ status: false, message: "A restaurant with this title already exists" });
+            }
+        }
         const newRestaurant = new Restaurant(req.body);
         await newRestaurant.save();
         res.status(201).json({ status: true, message: "Restaurant added Successfully" });
