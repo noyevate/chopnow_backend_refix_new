@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const RestaurantSchema = new mongoose.Schema({
     title: { type: String, required: true },
-    time: { type: String, required: false },
+    time: { type: Array, default: [] },
     imageUrl: { type: String, required: true },
     foods: { type: Array, default: [] },
     pickup: { type: Boolean, default: false },
