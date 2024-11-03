@@ -469,6 +469,53 @@ async function restaurantCategoryAvailability(req, res) {
     }
 };
 
+async function updateRestaurantCategory(req, res) {
+    const { restaurantId, currentCategory, newCategory } = req.params;
+
+    try {
+        // Log input parameters
+
+        const objectId = new mongoose.Types.ObjectId(restaurantId);
+
+        // Validate restaurantId as an ObjectId
+        if (!objectId) {
+            return res.status(400).json({ message: "Invalid restaurant ID format." });
+        }
+
+        // Attempt to find matching documents
+        const matchingDocs = await Food.find({
+            restaurant: objectId,
+            restaurant_category: currentCategory,
+        });
+
+        console.log("Matching documents found:", matchingDocs);
+
+        // Check if any documents were found
+        if (matchingDocs.length === 0) {
+            return res.status(404).json({ message: "No matching food items found to update." });
+        }
+
+        // If matching documents found, proceed with the update
+        const result = await Food.updateMany(
+            {
+                restaurant: objectId,
+                restaurant_category: currentCategory
+            },
+            {
+                $set: { restaurant_category: newCategory }
+            }
+        );
+
+
+        res.status(200).json({
+            success: true,
+            message: `${result.modifiedCount} food items updated to new restaurant category.`,
+        });
+    } catch (error) {
+        console.error("Error during update:", error);
+        res.status(500).json({ message: error.message });
+    }
+}
 
 
 
@@ -476,4 +523,22 @@ async function restaurantCategoryAvailability(req, res) {
 
 
 
-module.exports = { addFood, fetchRestaurantCategories, getFoodById, getRandomFood, getFoodByCategoryAndCode, getFoodsByRestaurant, getallFoodsByCodee, searchFood, getRandomFoodByCodeAndCategory, getFoodByCategory, searchRestaurantFood, searchFoodAndRestaurant, fetchFoodByCategory, fetchRestaurantAdditives, filteredFoodByRestaurantCategory, restaurantCategoryAvailability }
+
+module.exports = { addFood, 
+    fetchRestaurantCategories, 
+    getFoodById, 
+    getRandomFood, 
+    getFoodByCategoryAndCode, 
+    getFoodsByRestaurant, 
+    getallFoodsByCodee, 
+    searchFood, 
+    getRandomFoodByCodeAndCategory, 
+    getFoodByCategory, 
+    searchRestaurantFood, 
+    searchFoodAndRestaurant, 
+    fetchFoodByCategory, 
+    fetchRestaurantAdditives, 
+    filteredFoodByRestaurantCategory, 
+    restaurantCategoryAvailability,
+    updateRestaurantCategory
+}
