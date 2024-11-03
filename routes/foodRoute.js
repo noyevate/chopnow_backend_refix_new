@@ -15,6 +15,7 @@ router.get("/search-food-restaurant/:search", foodController.searchFoodAndRestau
 router.get("/:category/:code", foodController.getFoodByCategoryAndCode);
 router.get("/ByCode/:code", foodController.getallFoodsByCodee);
 router.get("/category/list/:category", foodController.fetchFoodByCategory);
+router.put("/categoryAvailability/:restaurantId/:restaurant_category", foodController.restaurantCategoryAvailability);
 
 
 // router.get("/restaurant-food/:id", foodController.getFoodsByRestaurant);
