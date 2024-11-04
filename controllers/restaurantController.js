@@ -2,11 +2,11 @@ const Restaurant = require("../models/Restaurant");
 
 
 async function addRestaurant(req, res) {
-    const { title, time, imageUrl, phone, code, logoUrl, coords } = req.body;
-    if (!title || !time || !imageUrl || !phone || !code || !logoUrl || !coords
-        || !coords.latitude || !coords.longitude || !coords.address || !coords.title) {
-        return res.status(400).json({ status: false, message: "You have a missing field" });
-    };
+    const { title, imageUrl, phone, code, logoUrl, coords, restaurantMail, userId } = req.body;
+    // if (!title || !imageUrl || !phone || !code || !logoUrl || !coords || restaurantMail || userId
+    //     || !coords.latitude || !coords.longitude || !coords.address || !coords.title) {
+    //     return res.status(400).json({ status: false, message: "You have a missing field" });
+    // };
     try {
         const newRestaurant = new Restaurant(req.body);
         await newRestaurant.save();
@@ -127,7 +127,6 @@ async function restaurantAvailability(req, res) {
 
 async function getPopularRestaurant(req, res) {
     try {
-        console.log("APi reached")
         let popularRestaurants = [];
         popularRestaurants = await Restaurant.aggregate([
             { $match: { isAvailabe: true } },
