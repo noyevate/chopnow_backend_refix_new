@@ -3,6 +3,8 @@ const User = require('../models/User');
 const { generateOTP, hashPIN } = require('../utils/generate_otp');
 const { sendOTP } = require('../utils/send_otp');
 const bcrypt = require('bcryptjs');
+const CryptoJs = require("crypto-js");
+
 const jwt = require('jsonwebtoken')
 
 const validateEmail = async (email) => {
@@ -219,8 +221,8 @@ async function login(req, res) {
 
     // Generate JWT token
     const token = jwt.sign({ id: user._id, userType: user.userType, phone: user.phone }, process.env.JWT_SECRET, { expiresIn: '5h' });
-    
-    const {password,otp,createdAt,updatedAt, ...others} = user._doc;
+
+    const { password, otp, createdAt, updatedAt, ...others } = user._doc;
     res.status(200).json({ ...others, token });
   } catch (error) {
     console.error('Error in login:', error);
@@ -253,4 +255,60 @@ async function resendOTP(req, res) {
   }
 }
 
-module.exports = { createAccount, login, setPIN, validateEmail, validatePhone, resendOTP, createRestaurantAccount };
+async function loginVendor(req, res) {
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
+  if (!emailRegex.test(req.body.email)) {
+    return res.status(404).json({ status: false, message: "Email not valid" });
+  }
+
+  const minPasswordLength = 8;
+  if (req.body.password.length < minPasswordLength) {
+    return res.status(404).json({ status: false, message: `Password should be at least ${minPasswordLength} characters` });
+  }
+
+  try {
+    const user = await User.findOne({ email: req.body.email });
+    if (!user) {
+      return res.status(404).json({ status: false, message: "User not found" });
+    }
+
+    // Verify userType
+    if (user.userType !== "Vendor") {
+      return res.status(403).json({ status: false, message: "Access denied: Only vendors can log in" });
+    }
+
+    // Check if password is defined
+    if (!user.password || user.password === "non") {
+      return res.status(404).json({ status: false, message: "Password not set" });
+    }
+    try {
+      const isPasswordValid = await bcrypt.compare(req.body.password, user.password);
+      if (!isPasswordValid) {
+        return res.status(400).json({ status: false, message: 'Wrong Passord' });
+      }
+
+    } catch (error) {
+      console.error("Decryption error:", error); // Log decryption error
+      return res.status(500).json({ status: false, message: "Error decrypting password" });
+    }
+
+    const userToken = jwt.sign(
+      {
+        id: user._id,
+        userType: user.userType,
+        email: user.email,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "50d" }
+    );
+
+    const { password, otp, createdAt, updatedAt, ...others } = user._doc;
+    res.status(200).json({ ...others, userToken });
+  } catch (error) {
+    console.error("Login error:", error); // Log login error
+    return res.status(500).json({ status: false, message: error.message });
+  }
+}
+
+
+module.exports = { createAccount, login, loginVendor, setPIN, validateEmail, validatePhone, resendOTP, createRestaurantAccount };
