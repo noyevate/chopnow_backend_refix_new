@@ -79,7 +79,7 @@ async function createAccount(req, res) {
 
     // Send OTP
 
-    //  await sendOTP(formattedPhone, otp);
+      await sendOTP(formattedPhone, otp);
 
     res.status(201).json({
       status: true,
@@ -134,7 +134,7 @@ async function createRestaurantAccount(req, res) {
       phone: formattedPhone,
       email,
       userType: "Vendor",
-      otp: "1234", //otp,
+      otp: otp, //otp,
       otpExpires: Date.now() + 10 * 60 * 1000 // OTP valid for 10 minutes
     });
 
@@ -146,7 +146,7 @@ async function createRestaurantAccount(req, res) {
 
     res.status(201).json({
       status: true,
-      message: 'Account created. Verify your phone number.',
+      message: 'Account created. Verify your email.',
       user: {
         id: user._id,
         first_name: user.first_name,
@@ -302,8 +302,8 @@ async function loginVendor(req, res) {
       { expiresIn: "50d" }
     );
 
-    const { password, otp, createdAt, updatedAt, ...others } = user._doc;
-    res.status(200).json({ ...others, userToken });
+    const { password, otp, createdAt, updatedAt, otpExpires, ...others } = user._doc;
+    res.status(201).json({ ...others, userToken });
   } catch (error) {
     console.error("Login error:", error); // Log login error
     return res.status(500).json({ status: false, message: error.message });

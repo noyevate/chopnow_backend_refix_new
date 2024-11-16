@@ -1,6 +1,6 @@
 const User = require('../models/User');
 const { generateOTP, hashPIN } = require('../utils/generate_otp');
-const { sendOTP } = require('../utils/send_otp');
+const sendEmail  = require('../utils/smtp_function');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken')
 
@@ -265,6 +265,159 @@ async function changePin(req, res) {
         console.error('Error in changePin:', error);
         res.status(500).json({ status: false, message: 'Server error', error });
     }
+
+}
+
+
+
+// Vendor
+
+async function resetVendorPassword(req, res) {
+    try {
+        // Step 1: Find the user with the specified email and userType 'Vendor'
+        const email  = req.params.email;
+        const user = await User.findOne({ email, userType: 'Vendor' });
+        if (!user) {
+            return res.status(404).json({ status: false, message: "Vendor with this email not found" });
+        }
+
+        // Step 2: Generate a random OTP
+        const otp = generateOTP();
+
+        // Step 3: Save OTP and expiration in the user's document
+        user.otp = otp;
+        user.otpExpires = Date.now() + 10 * 60 * 1000;
+        await user.save();
+
+        // Step 4: Send OTP to the user's email
+        await sendEmail(user.email, otp);
+        res.status(201).json({
+            status: true,
+            message: 'Otp sent to your mail.',
+            user: {
+              id: user._id,
+              first_name: user.first_name,
+              last_name: user.last_name,
+              phone: user.phone,
+              email: user.email
+            }
+          });
+    } catch (error) {
+        console.error("Error in resetPassword:", error);
+        return res.status(500).json({ status: false, message: error.message });
+    }
+}
+
+async function verifyVendorOtpPin(req, res) { 
+    const { userId, otp } = req.params;  // Fetch userId and otp from req.params
+
+    try {
+        // Find the user by their unique ID
+        const user = await User.findById(userId);
+
+        // Check if user exists, if OTP matches, and if OTP hasn't expired
+        if (!user || user.otp !== otp || user.otpExpires < Date.now()) {
+            return res.status(400).json({ message: 'Invalid OTP or OTP expired' });
+        }
+
+        // OTP is valid, clear OTP fields
+        user.otp = null;
+        user.otpExpires = null;
+        await user.save();
+
+        res.status(200).json({ message: 'OTP verified. You can now reset your PIN.' });
+    } catch (error) {
+        console.error("Error verifying OTP:", error);
+        res.status(500).json({ message: 'Server error', error });
+
+    }
+}
+
+async function resendVendorOTP(req, res) {
+    const { id } = req.params;
+  
+    try {
+      const user = await User.findById({ _id: id });
+  
+      if (!user) {
+        return res.status(404).json({ status: false, message: 'User not found' });
+      }
+  
+      // Generate new OTP
+      const otp = generateOTP();
+      user.otp = otp;
+      user.otpExpires = Date.now() + 10 * 60 * 1000; // OTP valid for 10 minutes
+      await user.save();
+  
+      // Send OTP
+      await sendEmail(user.email, otp);
+  
+      res.status(201).json({ status: true, message: 'OTP resent successfully' });
+    } catch (error) {
+      res.status(500).json({ status: false, message: 'Server error', error });
+    }
+}  
+
+async function verifyEmail(req, res) {
+    const { id, otp } = req.params; // Use req.params to get phone and otp
+    console.log(id, otp)
+
+    try {
+        const user = await User.findById({ _id: id }); // Find user by phone number
+        //  if (user.otp !== otp || user.otpExpires > Date.now()) {
+        //     return res.status(500).json({status: false,  message: 'Invalid OTP or OTP expired' });
+        // }
+
+        if (!user) {
+            return res.status(404).json({ status: false, message: 'User not found' });
+        }
+
+        if (otp === user.otp) {
+            // Verify OTP
+            user.verification = true
+            user.otp = null; // Clear OTP
+            user.otpExpires = null; // Clear OTP expiry
+            await user.save();
+
+            const userToken = jwt.sign({
+                id: user._id,
+                userType: user.userType,
+                email: user.email
+            }, process.env.JWT_SECRET, { expiresIn: "50d" });
+
+            const {password,otp,createdAt,updatedAt, ...others} = user._doc;
+            return res.status(201).json({ ...others, token});
+        } else {
+            return res.status(404).json({ status: false, message: "OTP verification failed" });
+        }
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ status: false, message: 'Server error', error });
+    }
+}
+
+
+async function ChangePassword(req, res) {
+    const { id, password } = req.params;
+
+    try {
+        const user = await User.findById(id);
+
+        if (!user) {
+            return res.status(400).json({ status: false, message: 'User not found' });
+        }
+        if (!user.verification) {
+            return res.status(400).json({ status: false, message: 'Phone not verified' });
+        }
+
+        user.password = await hashPIN(password);
+        await user.save();
+
+        res.status(201).json({ status: true, message: 'Passoword reset successfully. You can now log in.' });
+    } catch (error) {
+        console.error('Error in changePin:', error);
+        res.status(500).json({ status: false, message: 'Server error', error });
+    }
 }
 
 
@@ -272,4 +425,4 @@ async function changePin(req, res) {
 
 
 
-module.exports = { getUser, verifyPin, changePin, verifyPhone, deleteUser, changePhone, requestOTPForgotPIN, verifyOTPForgotPIN, resetPIN, updateUserName };
+module.exports = { getUser, verifyPin, changePin, verifyPhone, verifyEmail, resendVendorOTP, ChangePassword, resetVendorPassword, verifyVendorOtpPin, deleteUser, changePhone, requestOTPForgotPIN, verifyOTPForgotPIN, resetPIN, updateUserName };
