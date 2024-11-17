@@ -184,18 +184,35 @@ async function addTimeToRestaurant(req, res) {
             });
         }
 
-        // Create the new time entry object
-        const newTimeEntry = {
-            orderType,
-            day,
-            open,
-            close,
-            orderCutOffTime: orderCutOffTime || null,
-            menuReadyTime: menuReadyTime || null,
-        };
+        // Find the existing time entry for the specified day
+        const existingTimeEntry = restaurant.time.find((entry) => entry.day === day);
 
-        // Push the new time entry into the restaurant's time array
-        restaurant.time.push(newTimeEntry);
+        if (existingTimeEntry) {
+            // If the existing entry is found, we can update it or delete the content as needed.
+            if (orderCutOffTime === null || orderCutOffTime === '') {
+                existingTimeEntry.orderCutOffTime = null; // Set to null if empty or null is provided
+            } else {
+                existingTimeEntry.orderCutOffTime = orderCutOffTime;
+            }
+
+            if (menuReadyTime === null || menuReadyTime === '') {
+                existingTimeEntry.menuReadyTime = null; // Set to null if empty or null is provided
+            } else {
+                existingTimeEntry.menuReadyTime = menuReadyTime;
+            }
+        } else {
+            // If there's no existing entry for this day, create a new time entry
+            const newTimeEntry = {
+                orderType,
+                day,
+                open,
+                close,
+                orderCutOffTime: orderCutOffTime || null,
+                menuReadyTime: menuReadyTime || null,
+            };
+            // Add the new time entry
+            restaurant.time.push(newTimeEntry);
+        }
 
         // Save the restaurant with the updated time array
         await restaurant.save();
@@ -213,6 +230,7 @@ async function addTimeToRestaurant(req, res) {
         });
     }
 }
+
 
 
 module.exports = { addRestaurant, getRestaurantById, addTimeToRestaurant, getRestaurantByUser, getRestaurantbyUserId, getRandomRestaurant, getAllNearbyRestaurant, restaurantAvailability, getPopularRestaurant }
