@@ -11,5 +11,6 @@ router.get("/byId/:id", restaurantController.getRestaurantById);
 router.get("/byUserId/:userId", restaurantController.getRestaurantByUser);
 router.get("/", restaurantController.getRestaurantbyUserId);
 router.post('/toggle-availability/:id', restaurantController.restaurantAvailability);
+router.post("/addTime/:restaurantId", restaurantController.addTimeToRestaurant);
 
 module.exports = router;

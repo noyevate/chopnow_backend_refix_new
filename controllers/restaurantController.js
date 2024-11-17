@@ -10,7 +10,7 @@ async function addRestaurant(req, res) {
     try {
 
         const existingRestaurant = await Restaurant.findOne({ $or: [{ userId }, { title }] });
-        
+
         if (existingRestaurant) {
             if (existingRestaurant.userId.toString() === userId) {
                 return res.status(400).json({ status: false, message: "User already has a restaurant" });
@@ -20,13 +20,15 @@ async function addRestaurant(req, res) {
         }
         const newRestaurant = new Restaurant(req.body);
         await newRestaurant.save();
-        res.status(201).json({ status: true, message: "Restaurant added Successfully", newRestaurant: {
-            restaurantId: newRestaurant._id,
-            title: newRestaurant.title ,
-            rating: newRestaurant.rating,
-            address: newRestaurant.coords.address,
-            verification: newRestaurant.verification
-          } });
+        res.status(201).json({
+            status: true, message: "Restaurant added Successfully", newRestaurant: {
+                restaurantId: newRestaurant._id,
+                title: newRestaurant.title,
+                rating: newRestaurant.rating,
+                address: newRestaurant.coords.address,
+                verification: newRestaurant.verification
+            }
+        });
     } catch (error) {
         res.status(500).json({ status: false, message: error.message });
     }
@@ -110,7 +112,7 @@ async function getAllNearbyRestaurant(req, res) {
 
             ]);
         }
-        
+
 
         res.status(200).json(allNearbyRestaurants);
     } catch (error) {
@@ -158,5 +160,60 @@ async function getPopularRestaurant(req, res) {
     }
 };
 
-module.exports = { addRestaurant, getRestaurantById, getRestaurantByUser, getRestaurantbyUserId, getRandomRestaurant, getAllNearbyRestaurant, restaurantAvailability, getPopularRestaurant }
+
+async function addTimeToRestaurant(req, res) {
+    try {
+        const { restaurantId } = req.params; // Get restaurantId from URL params
+        const { orderType, day, open, close, orderCutOffTime, menuReadyTime } = req.body;
+
+        // Validate the input
+        if (!orderType || !day || !open || !close) {
+            return res.status(400).json({
+                success: false,
+                message: 'Missing required fields: orderType, day, open, close.',
+            });
+        }
+
+        // Find the restaurant by ID
+        const restaurant = await Restaurant.findById(restaurantId);
+
+        if (!restaurant) {
+            return res.status(404).json({
+                success: false,
+                message: 'Restaurant not found.',
+            });
+        }
+
+        // Create the new time entry object
+        const newTimeEntry = {
+            orderType,
+            day,
+            open,
+            close,
+            orderCutOffTime: orderCutOffTime || null,
+            menuReadyTime: menuReadyTime || null,
+        };
+
+        // Push the new time entry into the restaurant's time array
+        restaurant.time.push(newTimeEntry);
+
+        // Save the restaurant with the updated time array
+        await restaurant.save();
+
+        // Respond with the updated restaurant
+        return res.status(200).json({
+            success: true,
+            message: 'Time added successfully.',
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({
+            success: false,
+            message: 'Server error.',
+        });
+    }
+}
+
+
+module.exports = { addRestaurant, getRestaurantById, addTimeToRestaurant, getRestaurantByUser, getRestaurantbyUserId, getRandomRestaurant, getAllNearbyRestaurant, restaurantAvailability, getPopularRestaurant }
 
