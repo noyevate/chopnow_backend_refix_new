@@ -184,43 +184,29 @@ async function addTimeToRestaurant(req, res) {
             });
         }
 
-        // Find the existing time entry for the specified day
-        const existingTimeEntry = restaurant.time.find((entry) => entry.day === day);
+        // Clear the existing time entries
+        restaurant.time = [];
 
-        if (existingTimeEntry) {
-            // If the existing entry is found, we can update it or delete the content as needed.
-            if (orderCutOffTime === null || orderCutOffTime === '') {
-                existingTimeEntry.orderCutOffTime = null; // Set to null if empty or null is provided
-            } else {
-                existingTimeEntry.orderCutOffTime = orderCutOffTime;
-            }
+        // Create the new time entry object
+        const newTimeEntry = {
+            orderType,
+            day,
+            open,
+            close,
+            orderCutOffTime: orderCutOffTime || null,
+            menuReadyTime: menuReadyTime || null,
+        };
 
-            if (menuReadyTime === null || menuReadyTime === '') {
-                existingTimeEntry.menuReadyTime = null; // Set to null if empty or null is provided
-            } else {
-                existingTimeEntry.menuReadyTime = menuReadyTime;
-            }
-        } else {
-            // If there's no existing entry for this day, create a new time entry
-            const newTimeEntry = {
-                orderType,
-                day,
-                open,
-                close,
-                orderCutOffTime: orderCutOffTime || null,
-                menuReadyTime: menuReadyTime || null,
-            };
-            // Add the new time entry
-            restaurant.time.push(newTimeEntry);
-        }
+        // Add the new time entry to the restaurant's time array
+        restaurant.time.push(newTimeEntry);
 
         // Save the restaurant with the updated time array
         await restaurant.save();
 
-        // Respond with the updated restaurant
+        // Respond with a success message
         return res.status(200).json({
             success: true,
-            message: 'Time added successfully.',
+            message: 'All existing time entries deleted and new time added successfully.',
         });
     } catch (error) {
         console.error(error);
@@ -230,6 +216,9 @@ async function addTimeToRestaurant(req, res) {
         });
     }
 }
+
+
+
 
 
 
