@@ -10,8 +10,8 @@ async function addAdditive(req, res) {
     await newAdditive.save();
 
 
-
-    res.status(201).json({ status: true, message: "additive has been created successfully" });
+    const { createdAt, updatedAt, ...others } = newAdditive._doc;
+    res.status(201).json({ status: true, message: "additive has been created successfully", ...others });
   } catch (error) {
     res.status(500).json({ status: false, message: error.message });
   }
