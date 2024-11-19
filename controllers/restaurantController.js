@@ -26,7 +26,8 @@ async function addRestaurant(req, res) {
                 title: newRestaurant.title,
                 rating: newRestaurant.rating,
                 address: newRestaurant.coords.address,
-                verification: newRestaurant.verification
+                verification: newRestaurant.verification,
+                code: newRestaurant.code
             }
         });
     } catch (error) {
