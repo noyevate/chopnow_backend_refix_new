@@ -5,7 +5,7 @@ const mongoose = require('mongoose');
 
 async function addFood(req, res) {
     const { title, foodTags, category, restaurant_category, code, restaurant, description, time, price, additive, imageUrl } = req.body;
-    if (!title || !foodTags || !category || !code || !restaurant || !description || !time || !price || !additive || !imageUrl || !restaurant_category || !restaurantCategoryAvailable) {
+    if (!title || !foodTags || !category || !code || !restaurant || !description || !time || !price || !additive || !imageUrl || !restaurant_category ) {
         return res.status(400).json({ status: false, message: "You have a missing field" });
     }
 

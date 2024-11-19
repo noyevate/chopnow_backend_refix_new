@@ -12,7 +12,7 @@ async function addPack(req, res) {
         await newPack.save();
 
         const { createdAt, updatedAt, ...others } = newPack._doc;
-        res.status(201).json({ status: true, message: "additive has been created successfully", ...others });
+        res.status(201).json({ status: true, message: "Pack has been created successfully", ...others });
     } catch (error) {
         res.status(500).json({ status: false, message: error.message });
     }
