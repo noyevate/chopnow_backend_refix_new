@@ -17,7 +17,8 @@ router.get("/ByCode/:code", foodController.getallFoodsByCodee);
 router.get("/category/list/:category", foodController.fetchFoodByCategory);
 router.put("/categoryAvailability/:restaurantId/:restaurant_category", foodController.restaurantCategoryAvailability);
 router.patch("/update-category/:restaurantId/:currentCategory/:newCategory", foodController.updateRestaurantCategory);
-
+router.get("/fetch-single-food-additive/:foodId/additives", foodController.fetchAdditivesForSingleFood);
+router.get("/fetch-single-food-packs/:foodId/packs", foodController.fetchPackForSingleFood);
 
 // router.get("/restaurant-food/:id", foodController.getFoodsByRestaurant);
 

@@ -1,4 +1,5 @@
 const Pack = require("../models/Pack");
+const Food = require("../models/Food");
 const mongoose = require('mongoose');
 
 async function addPack(req, res) {
@@ -32,6 +33,20 @@ async function getPacks(req, res) {
     }
 }
 
+async function getPacksById(req, res) {
+  const { id } = req.params;
+  try {
+      const packs = await Pack.findById(id);
+      if (!packs) {
+          return res.status(404).json({ status: false, message: 'Packs not found' });
+      }
+      res.status(200).json(packs);
+      
+  } catch (error) {
+      res.status(500).json({ status: false, message: error.message });
+  }
+}
+
 async function updatePack(req, res) {
     const { id } = req.params; // Get the additive ID from the URL
     const { packName, packDescription, price, isAvailable } = req.body; // Get the updated fields from the request body
@@ -60,62 +75,10 @@ async function updatePack(req, res) {
     }
   };
 
-// async function updatePack(req, res) {
-//   const { id } = req.params; // Get the pack ID from the URL
-//   const { packName, packDescription, price, isAvailable } = req.body; // Get the updated fields from the request body
 
-//   try {
-//       // Find the pack by its ID and update the fields
-//       const updatedPack = await Pack.findByIdAndUpdate(
-//           id,
-//           {
-//               packName: packName || undefined, 
-//               packDescription: packDescription || undefined, 
-//               price: price || undefined, 
-//               isAvailable: isAvailable,
-//           },
-//           { new: true, runValidators: true } // Return the updated document and validate inputs
-//       );
 
-//       if (!updatedPack) {
-//           return res.status(404).json({ message: 'Pack not found' });
-//       }
 
-//       // Find all foods containing this pack ID in their pack field
-//       const foodsToUpdate = await Food.find({ 'pack._id': id });
 
-//       // Update the matching packs within the food documents
-//       for (const food of foodsToUpdate) {
-//           food.pack = food.pack.map(pack => {
-//               if (pack._id.toString() === id) {
-//                   // Update the pack details in the food document
-//                   return {
-//                       ...pack,
-//                       packName: packName || pack.packName,
-//                       packDescription: packDescription || pack.packDescription,
-//                       price: price || pack.price,
-//                       isAvailable: isAvailable,
-//                   };
-//               }
-//               return pack;
-//           });
-
-//           // Save the updated food document
-//           await food.save();
-//       }
-
-//       // Return a success response
-//       res.status(201).json({ 
-//           status: true, 
-//           message: 'Pack and associated foods updated successfully',
-//       });
-//   } catch (error) {
-//       res.status(500).json({ 
-//           status: false, 
-//           message: `Internal server error: ${error.message}` 
-//       });
-//   }
-// }
 
 
   async function deletePack(req, res) {
@@ -129,6 +92,8 @@ async function updatePack(req, res) {
     }
   }
 
+  
 
 
-module.exports = { addPack, getPacks, updatePack, deletePack }
+
+module.exports = { addPack, getPacks, updatePack, deletePack, getPacksById }

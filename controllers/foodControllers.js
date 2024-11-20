@@ -1,5 +1,7 @@
 const Food = require("../models/Food");
 const Restaurant = require("../models/Restaurant");
+const Additives = require('../models/Additive');
+const Packs = require('../models/Pack');
 const mongoose = require('mongoose');
 
 
@@ -518,8 +520,55 @@ async function updateRestaurantCategory(req, res) {
 }
 
 
+// Fetch food additives
 
+async function fetchAdditivesForSingleFood(req, res) {
+    const { foodId } = req.params; // Get the food ID from the request parameters
+  
+    try {
+      // Fetch the food document by its ID
+      const food = await Food.findById(foodId);
+  
+      if (!food) {
+        return res.status(404).json({ message: 'Food not found' });
+      }
+  
+      // Extract additiveIds from the food's additive field
+      const additiveIds = food.additive.map((additive) => additive.additiveId);
+  
+      // Fetch additives that match the additiveIds
+      const resolvedAdditives = await Additives.find({ _id: { $in: additiveIds } });
+  
+      res.status(200).json(resolvedAdditives);
+    } catch (error) {
+      res.status(500).json({ message: `Internal server error: ${error.message}` });
+    }
+  }
 
+  // frt single pack
+
+  async function fetchPackForSingleFood(req, res) {
+    const { foodId } = req.params; // Get the food ID from the request parameters
+  
+    try {
+      // Fetch the food document by its ID
+      const food = await Food.findById(foodId);
+  
+      if (!food) {
+        return res.status(404).json({ message: 'Food not found' });
+      }
+  
+      // Extract additiveIds from the food's additive field
+      const packIds = food.pack.map((pack) => pack.packId);
+  
+      // Fetch additives that match the additiveIds
+      const resolvedPacks = await Packs.find({ _id: { $in: packIds } });
+  
+      res.status(200).json(resolvedPacks);
+    } catch (error) {
+      res.status(500).json({ message: `Internal server error: ${error.message}` });
+    }
+  }
 
 
 
@@ -540,5 +589,8 @@ module.exports = { addFood,
     fetchRestaurantAdditives, 
     filteredFoodByRestaurantCategory, 
     restaurantCategoryAvailability,
-    updateRestaurantCategory
+    updateRestaurantCategory,
+    fetchAdditivesForSingleFood,
+    fetchPackForSingleFood
+
 }
