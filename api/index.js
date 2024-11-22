@@ -3,17 +3,17 @@ const app = express();
 const dotenv = require('dotenv')
 const port = process.env.PORT || 4000;
 const mongoose = require('mongoose');
-const AuthRoute = require("./routes/authRoute");
-const UserRoute = require("./routes/userRoute");
-const CategoryRoute = require("./routes/categoryRoute");
-const RestaurantRoute = require("./routes/restaurantRoutes");
-const FoodRoute = require("./routes/foodRoute");
-const RatingRoute = require("./routes/ratingRoute");
-const AddressRoute = require("./routes/addressRoute");
-const CartRoute = require("./routes/cartRoute");
-const OrderRoute = require("./routes/orderRoute");
-const AdditiveRoute = require("./routes/additiveRoute");
-const PackRoute = require("./routes/packRoute");
+const AuthRoute = require("../routes/authRoute");
+const UserRoute = require("../routes/userRoute");
+const CategoryRoute = require("../routes/categoryRoute");
+const RestaurantRoute = require("../routes/restaurantRoutes");
+const FoodRoute = require("../routes/foodRoute");
+const RatingRoute = require("../routes/ratingRoute");
+const AddressRoute = require("../routes/addressRoute");
+const CartRoute = require("../routes/cartRoute");
+const OrderRoute = require("../routes/orderRoute");
+const AdditiveRoute = require("../routes/additiveRoute");
+const PackRoute = require("../routes/packRoute");
 
 
 dotenv.config();
