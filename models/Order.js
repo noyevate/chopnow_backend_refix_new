@@ -17,6 +17,7 @@ const OrderSchema = new mongoose.Schema({
     userId: {type: String, required:true},
     orderItems: [OrderItemSchema],
     orderTotal: {type: Number, required:true},
+    orderSubId: {type: Number, required:true},
     deliveryFee: {type: Number, required:true},
     grandTotal: {type: Number, required:true},
     deliveryAddress: {
