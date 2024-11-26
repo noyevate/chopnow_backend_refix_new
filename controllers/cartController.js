@@ -1,8 +1,7 @@
 const Cart = require("../models/Cart");
 
 async function addProductToCart(req, res) {
-    const userId = req.user.id;
-    const { productId, additives, totalPrice} = req.body;
+    const { productId, additives, totalPrice, userId } = req.body;
     let count;
     try {
         const existingProduct = await Cart.findOne({ userId: userId, productId: productId });
