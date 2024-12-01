@@ -115,6 +115,25 @@ async function getOrdersByStatusAndPayment(req, res) {
     }
 }
 
+async function getAllOrdersByRestaurantId(req, res) {
+    const restaurantId = req.params.restaurantId;
+
+    // if (!mongoose.Types.ObjectId.isValid(id)) {
+    //     return res.status(400).json({
+    //         status: false,
+    //         message: 'Invalid restaurantId format',
+    //     });
+    // }
+
+    try {
+        // Find orders by restaurantId
+        const orders = await Order.find({ restaurantId: restaurantId });
+        res.status(200).json(orders);
+    } catch (error) {
+        res.status(500).json({ status: false, message: error.message });
+    }
+}
+
 
 async function getAllUserOrders(req, res) {
     const userId = req.user.id;
@@ -150,4 +169,4 @@ async function getDeliveredAndCancelledOrders(req, res) {
     }
 }
 
-module.exports = { placeOrder, getDeliveredAndCancelledOrders, getAllUserOrders, getUserOrder, getOrdersByRestaurantId, updateOrderStatus, getOrdersByStatusAndPayment }
+module.exports = { placeOrder, getDeliveredAndCancelledOrders, getAllUserOrders, getUserOrder, getOrdersByRestaurantId, updateOrderStatus, getOrdersByStatusAndPayment, getAllOrdersByRestaurantId }

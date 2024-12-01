@@ -11,6 +11,9 @@ router.get("/status-and-payment", verifyTokenAndAuthorization,  orderController.
 
 router.get("/:restaurantId/:orderStatus/:paymentStatus", orderController.getOrdersByRestaurantId);
 
+
+router.get("/:restaurantId", orderController.getAllOrdersByRestaurantId);
+
 // router.get("/:restaurantId/:orderStatus/:paymentStatus", verifyTokenAndAuthorization,  orderController.getOrdersByRestaurantId);
 
 
