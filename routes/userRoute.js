@@ -1,6 +1,6 @@
 // routes/user.js
 const express = require('express');
-const { getUser, verifyPhone, verifyPin, resetVendorPassword, verifyEmail, resendVendorOTP, ChangePassword, verifyVendorOtpPin, deleteUser,requestOTPForgotPIN, changePhone, updateUserName,verifyOTPForgotPIN, resetPIN, changePin, } = require('../controllers/userController');
+const { getUser, verifyPhone, verifyPin,resetPassword, resetVendorPassword, verifyEmail, resendVendorOTP, ChangePassword, verifyVendorOtpPin, deleteUser,requestOTPForgotPIN, changePhone, updateUserName,verifyOTPForgotPIN, resetPIN, changePin, } = require('../controllers/userController');
 const {verifyTokenAndAuthorization} = require('../middlewares/verifyToken')
 
 const router = express.Router();
@@ -19,6 +19,7 @@ router.post('/verify-vendor-otp/:userId/:otp', verifyVendorOtpPin);
 router.post('/resend-vendor-otp/:id', resendVendorOTP);
 router.post('/reverify-vendor/:id/:otp', verifyEmail);
 router.put('/change-Vendor-Password/:id/:password', ChangePassword);
+router.put('/resset-password/:id/:password/:password1', resetPassword);
 
 
 

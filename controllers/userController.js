@@ -156,6 +156,45 @@ async function resetPIN(req, res) {
     }
 }
 
+async function verifyPIN(inputPin, storedHashedPin) {
+
+    
+    matching =  await bcrypt.compare(inputPin, storedHashedPin);
+    console.log(matching)
+    return matching
+   
+}
+
+async function resetPassword(req, res) {
+    const { id, password, password1 } = req.params; // `pin1` represents the old PIN
+
+    try {
+        const user = await User.findById(id);
+        console.log(user)
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Verify the provided old PIN (`pin1`) with the hashed PIN stored in the database
+        const isMatch = await verifyPIN(password1, user.password);
+        if (!isMatch) {
+            return res.status(400).json({ message: 'Incorrect old PIN' });
+        }
+
+        // Hash the new PIN and save it
+        user.password = await hashPIN(password);
+        await user.save();
+
+        res.status(200).json({ message: 'PIN reset successfully. You can now log in.' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server error', error });
+    }
+}
+
+
+
 async function updateUserName(req, res) {
 
     const userId = req.user.id
@@ -425,4 +464,4 @@ async function ChangePassword(req, res) {
 
 
 
-module.exports = { getUser, verifyPin, changePin, verifyPhone, verifyEmail, resendVendorOTP, ChangePassword, resetVendorPassword, verifyVendorOtpPin, deleteUser, changePhone, requestOTPForgotPIN, verifyOTPForgotPIN, resetPIN, updateUserName };
+module.exports = { getUser, verifyPin, changePin, verifyPhone, verifyEmail, resendVendorOTP, ChangePassword, resetVendorPassword, verifyVendorOtpPin, deleteUser, changePhone, requestOTPForgotPIN, verifyOTPForgotPIN, resetPIN, updateUserName , resetPassword};
