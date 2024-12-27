@@ -2,15 +2,64 @@ const User = require("../models/User");
 const Address = require("../models/Address");
 
 
+// async function addAddress(req, res) {
+//     try {
+//         const isDefault = req.body.default === true;  // Ensure this is boolean
+//         console.log("Received default value:", isDefault);
+
+//         if (isDefault) {
+//             await Address.updateMany({ userId: req.user.id, default: true }, { $set: { default: false } });
+//         }
+
+//         const newAddress = new Address({
+//             userId: req.user.id,
+//             addressLine1: req.body.addressLine1,
+//             postalCode: req.body.postalCode,
+//             default: isDefault,
+//             deliveryInstructions: req.body.deliveryInstructions,
+//             latitude: req.body.latitude,
+//             longitude: req.body.longitude
+//         });
+
+//         await newAddress.save();
+//         console.log("Saved Address:", newAddress); // Debugging line
+//         return res.status(201).json({ status: true, message: "Address successfully created" });
+//     } catch (error) {
+//         return res.status(500).json({ status: false, message: error.message });
+//     }
+// }
+
+
 async function addAddress(req, res) {
     try {
-        const isDefault = req.body.default === true;  // Ensure this is boolean
+        const isDefault = req.body.default === true;
         console.log("Received default value:", isDefault);
 
-        if (isDefault) {
-            await Address.updateMany({ userId: req.user.id, default: true }, { $set: { default: false } });
+        // Check if the address already exists
+        const existingAddress = await Address.findOne({
+            userId: req.user.id,
+            addressLine1: req.body.addressLine1,
+            postalCode: req.body.postalCode,
+            latitude: req.body.latitude,
+            longitude: req.body.longitude
+        });
+
+        if (existingAddress) {
+            return res.status(409).json({  // 409 Conflict
+                status: false,
+                message: "Address already exists"
+            });
         }
 
+        // If default, set all other addresses to non-default
+        if (isDefault) {
+            await Address.updateMany(
+                { userId: req.user.id, default: true },
+                { $set: { default: false } }
+            );
+        }
+
+        // Create and save the new address
         const newAddress = new Address({
             userId: req.user.id,
             addressLine1: req.body.addressLine1,
@@ -22,10 +71,18 @@ async function addAddress(req, res) {
         });
 
         await newAddress.save();
-        console.log("Saved Address:", newAddress); // Debugging line
-        return res.status(201).json({ status: true, message: "Address successfully created" });
+        console.log("Saved Address:", newAddress);
+
+        return res.status(201).json({
+            status: true,
+            message: "Address successfully created"
+        });
+
     } catch (error) {
-        return res.status(500).json({ status: false, message: error.message });
+        return res.status(500).json({
+            status: false,
+            message: error.message
+        });
     }
 }
 
