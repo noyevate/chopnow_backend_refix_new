@@ -21,6 +21,8 @@ const validateEmail = async (email) => {
   return { status: true, message: 'Email is available' };
 }
 
+
+
 async function validatePhone(req, res) {
   const phone = req.params.phone
   const phoneRegex = /^(?:0)?[789]\d{9}$/;
@@ -34,6 +36,28 @@ async function validatePhone(req, res) {
   }
 
   return res.json({ status: true, message: 'Phone Number is available' });
+}
+
+
+
+async function validatePassword(req, res) {
+  const { password, id } = req.params
+
+
+  try {
+    const existingUser = await User.findById(id);
+    if (existingUser) {
+      matching = bcrypt.compare(password, existingUser.password);
+      if (isMatch) {
+        return res.status(400).json({ message: 'Incorrect old PIN' });
+      }
+    }  
+
+    return res.json({ status: true, message: 'Phone Number is available' });
+
+  } catch (e) {
+    res.status(500).json({ message: 'Server error', e });
+  }
 }
 
 
@@ -79,7 +103,7 @@ async function createAccount(req, res) {
 
     // Send OTP
 
-      await sendOTP(formattedPhone, otp);
+    await sendOTP(formattedPhone, otp);
 
     res.status(201).json({
       status: true,
@@ -311,4 +335,4 @@ async function loginVendor(req, res) {
 }
 
 
-module.exports = { createAccount, login, loginVendor, setPIN, validateEmail, validatePhone, resendOTP, createRestaurantAccount };
+module.exports = { createAccount, login, loginVendor, setPIN, validateEmail, validatePhone, validatePassword, resendOTP, createRestaurantAccount };
