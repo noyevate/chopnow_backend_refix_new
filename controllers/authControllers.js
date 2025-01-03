@@ -48,7 +48,7 @@ async function validatePassword(req, res) {
     const existingUser = await User.findById(id);
     if (existingUser) {
       matching = bcrypt.compare(password, existingUser.password);
-      if (isMatch) {
+      if (!matching) {
         return res.status(400).json({ message: 'Incorrect old PIN' });
       }
     }  
@@ -56,7 +56,7 @@ async function validatePassword(req, res) {
     return res.json({ status: true, message: 'Phone Number is available' });
 
   } catch (e) {
-    res.status(500).json({ message: 'Server error', e });
+    res.status(500).json({ message: 'Server error:', e });
   }
 }
 
