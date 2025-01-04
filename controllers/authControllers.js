@@ -43,7 +43,6 @@ async function validatePhone(req, res) {
 async function validatePassword(req, res) {
   const { password, id } = req.params
 
-
   try {
     const existingUser = await User.findById(id);
     if (existingUser) {
@@ -51,9 +50,8 @@ async function validatePassword(req, res) {
       if (!matching) {
         return res.status(400).json({ message: 'Incorrect old PIN' });
       }
-    }  
-
-    return res.json({ status: false, message: 'something went wrong' });
+    }
+    return res.status(404).json({ status: false, message: 'something went wrong' });
 
   } catch (e) {
     res.status(500).json({ message: 'Server error:', e });
