@@ -53,7 +53,7 @@ async function validatePassword(req, res) {
       }
     }  
 
-    return res.json({ status: true, message: 'something went wrong' });
+    return res.json({ status: false, message: 'something went wrong' });
 
   } catch (e) {
     res.status(500).json({ message: 'Server error:', e });
