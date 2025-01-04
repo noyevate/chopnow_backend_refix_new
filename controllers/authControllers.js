@@ -38,7 +38,11 @@ async function validatePhone(req, res) {
   return res.json({ status: true, message: 'Phone Number is available' });
 }
 
-
+async function verifyPIN(inputPin, storedHashedPin) {
+    matching =  await bcrypt.compare(inputPin, storedHashedPin);
+    console.log(matching)
+    return matching
+}
 
 async function validatePassword(req, res) {
   const { password, id } = req.params
@@ -46,12 +50,17 @@ async function validatePassword(req, res) {
   try {
     const existingUser = await User.findById(id);
     if (existingUser) {
-      matching = bcrypt.compare(password, existingUser.password);
+      console.log(existingUser)
+      matching = await verifyPIN(password, existingUser.password);
+      console.log(matching)
       if (!matching) {
-        return res.status(400).json({ message: 'Incorrect old PIN' });
+        return res.status(400).json({ message: 'Incorrect old password' });
       }
+    } else {
+      return res.status(404).json({ status: false, message: 'something went wrong' });
     }
-    return res.status(404).json({ status: false, message: 'something went wrong' });
+    return res.json({ status: true, message: 'Old password is correct' });
+    
 
   } catch (e) {
     res.status(500).json({ message: 'Server error:', e });
