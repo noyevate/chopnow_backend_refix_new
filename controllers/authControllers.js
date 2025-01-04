@@ -50,11 +50,9 @@ async function validatePassword(req, res) {
   try {
     const existingUser = await User.findById(id);
     if (existingUser) {
-      console.log(existingUser)
       matching = await verifyPIN(password, existingUser.password);
-      console.log(matching)
       if (!matching) {
-        return res.status(400).json({ message: 'Incorrect old password' });
+        return res.status(400).json({ message: 'In-correct password' });
       }
     } else {
       return res.status(404).json({ status: false, message: 'something went wrong' });
@@ -292,10 +290,6 @@ async function loginVendor(req, res) {
     return res.status(404).json({ status: false, message: "Email not valid" });
   }
 
-  const minPasswordLength = 8;
-  if (req.body.password.length < minPasswordLength) {
-    return res.status(404).json({ status: false, message: `Password should be at least ${minPasswordLength} characters` });
-  }
 
   try {
     const user = await User.findOne({ email: req.body.email });
