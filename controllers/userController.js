@@ -364,7 +364,14 @@ async function verifyVendorOtpPin(req, res) {
         user.otpExpires = null;
         await user.save();
 
-        res.status(200).json({ message: 'OTP verified. You can now reset your PIN.' });
+        const token = jwt.sign({
+            id: user._id,
+            userType: user.userType,
+            email: user.phone
+        }, process.env.JWT_SECRET, { expiresIn: "50d" });
+
+        const {password,otp,createdAt,updatedAt, ...others} = user._doc;
+        return res.status(201).json({ ...others, token});
     } catch (error) {
         console.error("Error verifying OTP:", error);
         res.status(500).json({ message: 'Server error', error });
