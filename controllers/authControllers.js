@@ -167,12 +167,13 @@ async function createRestaurantAccount(req, res) {
       otp: otp, //otp,
       otpExpires: Date.now() + 10 * 60 * 1000 // OTP valid for 10 minutes
     });
+    
 
     await user.save();
 
     // Send OTP
 
-      await sendEmail(email, otp);
+    await sendEmail(user.email, otp);
 
     res.status(201).json({
       status: true,
