@@ -148,9 +148,9 @@ async function createRestaurantAccount(req, res) {
     const formattedPhone = phone.startsWith('+234') ? phone : '+234' + phone.replace(/^0/, '');
     const nwePassword = await hashPIN(password);
 
-    const existingUser = await User.findOne({ phone: formattedPhone });
+    const existingUser = await User.findOne({ email: email });
     if (existingUser) {
-      return res.json({ status: false, message: 'Phone number already exists. Login to continue' });
+      return res.json({ status: false, message: 'Email already exists. Login to continue' });
     }
 
     // Generate OTP
