@@ -359,8 +359,8 @@ async function verifyVendorOtpPin(req, res) {
             return res.status(400).json({ message: 'Invalid OTP or OTP expired' });
         }
 
-        // OTP is valid, clear OTP fields
-        user.otp = null;
+        if(user.otp == otp) {
+             user.otp = null;
         user.otpExpires = null;
         await user.save();
 
@@ -372,6 +372,11 @@ async function verifyVendorOtpPin(req, res) {
 
         const {password,otp,createdAt,updatedAt, ...others} = user._doc;
         return res.status(201).json({ ...others, token});
+        } else {
+            return res.status(404).json({ status: false, message: "OTP verification failed" });
+        }
+        // OTP is valid, clear OTP fields
+       
     } catch (error) {
         console.error("Error verifying OTP:", error);
         res.status(500).json({ message: 'Server error', error });
@@ -406,7 +411,7 @@ async function resendVendorOTP(req, res) {
 
 async function verifyEmail(req, res) {
     const { id, otp } = req.params; // Use req.params to get phone and otp
-    console.log(id, otp)
+    // console.log(id, otp)
 
     try {
         const user = await User.findById({ _id: id }); // Find user by phone number
