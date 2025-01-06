@@ -3,7 +3,7 @@ const restaurantController = require('../controllers/restaurantController');
 const {verifyVendor} = require('../middlewares/verifyToken');
 const {verifyTokenAndAuthorization} = require('../middlewares/verifyToken')
 
-router.post("/", verifyTokenAndAuthorization, restaurantController.addRestaurant);
+router.post("/", verifyVendor, restaurantController.addRestaurant);
 router.get('/popular', restaurantController.getPopularRestaurant);
 router.get("/:code",  restaurantController.getRandomRestaurant);
 router.get("/all/:code", restaurantController.getAllNearbyRestaurant);
@@ -12,5 +12,6 @@ router.get("/byUserId/:userId", restaurantController.getRestaurantByUser);
 router.get("/", restaurantController.getRestaurantbyUserId);
 router.post('/toggle-availability/:id', verifyVendor, restaurantController.restaurantAvailability);
 router.post("/addTime/:restaurantId", restaurantController.addTimeToRestaurant);
+router.put('/updateRestaurant/:restaurantId', restaurantController.updatedRestaurant);
 
 module.exports = router;

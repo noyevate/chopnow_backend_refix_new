@@ -2,6 +2,7 @@
 const User = require('../models/User');
 const { generateOTP, hashPIN } = require('../utils/generate_otp');
 const { sendOTP } = require('../utils/send_otp');
+const { sendEmail } = require('../utils/smtp_function')
 const bcrypt = require('bcryptjs');
 const CryptoJs = require("crypto-js");
 
@@ -52,7 +53,7 @@ async function validatePassword(req, res) {
     if (existingUser) {
       matching = await verifyPIN(password, existingUser.password);
       if (!matching) {
-        return res.status(400).json({ message: 'In-correct password' });
+        return res.status(400).json({ message: 'In-correct password'});
       }
     } else {
       return res.status(404).json({ status: false, message: 'something went wrong' });
@@ -171,7 +172,7 @@ async function createRestaurantAccount(req, res) {
 
     // Send OTP
 
-    //  await sendOTP(formattedPhone, otp);
+      await sendEmail(email, otp);
 
     res.status(201).json({
       status: true,

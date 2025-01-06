@@ -218,10 +218,36 @@ async function addTimeToRestaurant(req, res) {
     }
 }
 
+async function updatedRestaurant(req, res) {
+    const { restaurantId } = req.params
+    try {
+        const restaurant = await Restaurant.findById(restaurantId);
+        if (!restaurant) {
+            return res.status(404).json({ status: false, message: "Restaurant not found" });
+        }
+
+        // Update restaurant with new data
+        const updatedRestaurant = await Restaurant.findByIdAndUpdate(
+            restaurantId,
+            { $set: updateData },  // Set the new values
+            { new: true, runValidators: true } // Return the updated document and run schema validators
+        );
+
+        res.status(200).json({
+            status: true,
+            message: "Restaurant updated successfully",
+            updatedRestaurant
+        });
+    } catch (error) {
+        res.status(500).json({ status: false, message: error.message });
+    }
+
+}
 
 
 
 
 
-module.exports = { addRestaurant, getRestaurantById, addTimeToRestaurant, getRestaurantByUser, getRestaurantbyUserId, getRandomRestaurant, getAllNearbyRestaurant, restaurantAvailability, getPopularRestaurant }
+
+module.exports = { addRestaurant, getRestaurantById, addTimeToRestaurant, getRestaurantByUser, getRestaurantbyUserId, getRandomRestaurant, getAllNearbyRestaurant, restaurantAvailability, getPopularRestaurant, updatedRestaurant }
 
