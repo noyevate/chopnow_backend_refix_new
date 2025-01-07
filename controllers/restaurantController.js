@@ -221,6 +221,7 @@ async function addTimeToRestaurant(req, res) {
 async function updatedRestaurant(req, res) {
     const { restaurantId } = req.params
     try {
+
         const restaurant = await Restaurant.findById(restaurantId);
         if (!restaurant) {
             return res.status(404).json({ status: false, message: "Restaurant not found" });
@@ -238,6 +239,7 @@ async function updatedRestaurant(req, res) {
             message: "Restaurant updated successfully",
             updatedRestaurant
         });
+        
     } catch (error) {
         res.status(500).json({ status: false, message: error.message });
     }
