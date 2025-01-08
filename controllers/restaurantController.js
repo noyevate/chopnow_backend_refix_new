@@ -235,7 +235,7 @@ async function updatedRestaurant(req, res) {
             { new: true, runValidators: true } // Return the updated document and run schema validators
         );
 
-        res.status(200).json({
+        res.status(201).json({
             status: true,
             message: "Restaurant updated successfully",
             updatedRestaurant
