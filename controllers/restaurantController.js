@@ -220,6 +220,7 @@ async function addTimeToRestaurant(req, res) {
 
 async function updatedRestaurant(req, res) {
     const { restaurantId } = req.params
+    const updateData = req.body;
     try {
 
         const restaurant = await Restaurant.findById(restaurantId);
