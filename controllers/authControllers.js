@@ -204,6 +204,70 @@ async function createRestaurantAccount(req, res) {
   }
 }
 
+async function createRiderAccount(req, res) {
+  const { first_name, last_name, phone, email, password } = req.body;
+
+  try {
+    // Validate email
+    const emailValidation = await validateEmail(email);
+    if (!emailValidation.status) {
+      return res.status(400).json(emailValidation);
+    }
+
+    // Validate phone
+    const phoneRegex = /^(?:0)?[789]\d{9}$/;
+    if (!phoneRegex.test(phone)) {
+      return res.json({ status: false, message: 'Phone number Invalid.' });
+    }
+
+    // Prepend "+234" to the phone number if it doesn't already start with it
+    const formattedPhone = phone.startsWith('+234') ? phone : '+234' + phone.replace(/^0/, '');
+    const nwePassword = await hashPIN(password);
+
+    const existingUser = await User.findOne({ email: email });
+    if (existingUser) {
+      return res.json({ status: false, message: 'Email already exists. Login to continue' });
+    }
+
+    // Generate OTP
+    const otp = generateOTP();
+
+    // Create new user
+    const user = new User({
+      first_name,
+      last_name,
+      password: nwePassword,
+      phone: formattedPhone,
+      email,
+      userType: "Driver",
+      otp: otp, //otp,
+      otpExpires: Date.now() + 10 * 60 * 1000 // OTP valid for 10 minutes
+    });
+
+
+    await user.save();
+
+    // Send OTP
+
+    await sendEmail(user.email, otp);
+
+    res.status(201).json({
+      status: true,
+      message: 'Account created. Verify your email.',
+      user: {
+        id: user._id,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        phone: user.phone,
+        email: user.email
+      }
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error });
+  }
+}
+
 
 
 async function setPIN(req, res) {
@@ -350,4 +414,4 @@ async function loginVendor(req, res) {
 }
 
 
-module.exports = { createAccount, login, loginVendor, setPIN, validateEmail, validatePhone, validatePassword, resendOTP, createRestaurantAccount };
+module.exports = { createAccount, login, loginVendor, setPIN, validateEmail, createRiderAccount, validatePhone, validatePassword, resendOTP, createRestaurantAccount };

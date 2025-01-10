@@ -1,10 +1,11 @@
 const express = require('express');
-const { createAccount, setPIN, login, loginVendor, validatePhone, validateEmail, resendOTP,  validatePassword, createRestaurantAccount } = require('../controllers/authControllers');
+const { createAccount, setPIN, login, loginVendor, validatePhone, createRiderAccount, validateEmail, resendOTP,  validatePassword, createRestaurantAccount } = require('../controllers/authControllers');
 
 const router = express.Router();
 
 router.post('/create-account', createAccount);
 router.post('/create-restaurant-account', createRestaurantAccount);
+router.post('/create_rider_account', createRiderAccount);
 router.post('/set-pin/:id/:pin', setPIN);
 router.post('/resend-otp/:id', resendOTP);
 router.post('/login/:phone/:pin', login);
