@@ -31,12 +31,13 @@ async function validatePhone(req, res) {
     return res.status(404).json({ status: false, message: 'Phone number Invalid.' });
   }
 
-  const existingUser = await User.findOne({ phone });
+  const formattedPhone = phone.startsWith('+234') ? phone : '+234' + phone.replace(/^0/, '');
+  const existingUser = await User.findOne({ formattedPhone });
   if (existingUser) {
     return res.status(400).json({ message: 'Phone number already exists. Login to continue' });
   }
 
-  return res.json({ status: true, message: 'Phone Number is available' });
+  return res.status(200).json({ status: true, message: 'Phone Number is available' });
 }
 
 async function verifyPIN(inputPin, storedHashedPin) {
