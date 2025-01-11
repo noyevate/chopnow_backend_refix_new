@@ -27,23 +27,34 @@ const validateEmail = async (email) => {
 async function validatePhone(req, res) {
   const phone = req.params.phone
   const phoneRegex = /^(?:0)?[789]\d{9}$/;
-  if (!phoneRegex.test(phone)) {
-    return res.status(404).json({ status: false, message: 'Phone number Invalid.' });
+
+
+  try {
+    if (!phoneRegex.test(phone)) {
+      return res.status(404).json({ status: false, message: 'Phone number Invalid.' });
+    }
+
+    const formattedPhone = phone.startsWith('+234') ? phone : '+234' + phone.replace(/^0/, '');
+    const existingUser = await User.findOne({ formattedPhone });
+    if (existingUser) {
+      return res.status(400).json({ message: 'Phone number already exists. Login to continue' });
+    }
+    if (!existingUser) {
+      return res.status(200).json({ status: true, message: 'Phone Number is available' });
+    }
+
+  } catch (e) {
+    return res.status(500).json({status: false, message: e})
   }
 
-  const formattedPhone = phone.startsWith('+234') ? phone : '+234' + phone.replace(/^0/, '');
-  const existingUser = await User.findOne({ formattedPhone });
-  if (existingUser) {
-    return res.status(400).json({ message: 'Phone number already exists. Login to continue' });
-  }
 
-  return res.status(200).json({ status: true, message: 'Phone Number is available' });
+
 }
 
 async function verifyPIN(inputPin, storedHashedPin) {
-    matching =  await bcrypt.compare(inputPin, storedHashedPin);
-    console.log(matching)
-    return matching
+  matching = await bcrypt.compare(inputPin, storedHashedPin);
+  console.log(matching)
+  return matching
 }
 
 async function validatePassword(req, res) {
@@ -54,13 +65,13 @@ async function validatePassword(req, res) {
     if (existingUser) {
       matching = await verifyPIN(password, existingUser.password);
       if (!matching) {
-        return res.status(400).json({ message: 'In-correct password'});
+        return res.status(400).json({ message: 'In-correct password' });
       }
     } else {
       return res.status(404).json({ status: false, message: 'something went wrong' });
     }
     return res.json({ status: true, message: 'Old password is correct' });
-    
+
 
   } catch (e) {
     res.status(500).json({ message: 'Server error:', e });
@@ -168,7 +179,7 @@ async function createRestaurantAccount(req, res) {
       otp: otp, //otp,
       otpExpires: Date.now() + 10 * 60 * 1000 // OTP valid for 10 minutes
     });
-    
+
 
     await user.save();
 
