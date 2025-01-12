@@ -18,7 +18,7 @@ const UserSchema = new mongoose.Schema({
         ref: "Address",
         required: false,
     },
-    userType: {type: String, required:true, default: "Client", enum: ['Client', 'Admin', 'Vendor', 'Driver']},
+    userType: {type: String, required:true, default: "Client", enum: ['Client', 'Admin', 'Vendor', 'Rider']},
     profile: {type: String}
 
     

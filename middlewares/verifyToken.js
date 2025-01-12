@@ -19,8 +19,8 @@ const verifyToken = (req, res, next) => {
 
 const verifyTokenAndAuthorization = (req, res, next) => {
     verifyToken(req, res, () => {
-        // 'Client', 'Admin', 'Vendor', 'Driver'
-        if(req.user.userType === 'Client' || req.user.userType === 'Admin' || req.user.userType === 'Vendor' || req.user.userType === 'Driver' ){
+        // 'Client', 'Admin', 'Vendor', 'Rider'
+        if(req.user.userType === 'Client' || req.user.userType === 'Admin' || req.user.userType === 'Vendor' || req.user.userType === 'Rider' ){
             next();
         } else {
             return res.status(403).json({status: false, message: "You are not allowed to access the routes"});
@@ -30,7 +30,7 @@ const verifyTokenAndAuthorization = (req, res, next) => {
 
 const verifyVendor = (req, res, next) => {
     verifyToken(req, res, () => {
-        // 'Client', 'Admin', 'Vendor', 'Driver'
+        // 'Client', 'Admin', 'Vendor', 'Rider'
         if( req.user.userType === 'Admin' || req.user.userType === 'Vendor'){
             next();
         } else {
@@ -41,7 +41,7 @@ const verifyVendor = (req, res, next) => {
 
 const verifyAdmin = (req, res, next) => {
     verifyToken(req, res, () => {
-        // 'Client', 'Admin', 'Vendor', 'Driver'
+        // 'Client', 'Admin', 'Vendor', 'Rider'
         if(req.user.userType === 'Admin' ){
             next();
         } else {
@@ -50,10 +50,10 @@ const verifyAdmin = (req, res, next) => {
     })
 }
 
-const verifyDriver = (req, res, next) => {
+const verifyRider = (req, res, next) => {
     verifyToken(req, res, () => {
-        // 'Client', 'Admin', 'Vendor', 'Driver'
-        if(req.user.userType === 'Driver' || req.user.userType === 'Admin' ){
+        // 'Client', 'Admin', 'Vendor', 'Rider'
+        if(req.user.userType === 'Rider' || req.user.userType === 'Admin' ){
             next();
         } else {
             return res.status(403).json({status: false, message: "You are not allowed to access the routes"});
@@ -61,4 +61,4 @@ const verifyDriver = (req, res, next) => {
     })
 }
 
-module.exports = {verifyToken, verifyTokenAndAuthorization, verifyVendor, verifyAdmin, verifyDriver}
+module.exports = {verifyToken, verifyTokenAndAuthorization, verifyVendor, verifyAdmin, verifyRider}

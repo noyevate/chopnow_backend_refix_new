@@ -239,7 +239,7 @@ async function createRiderAccount(req, res) {
       password: nwePassword,
       phone: formattedPhone,
       email,
-      userType: "Driver",
+      userType: "Rider",
       otp: otp, //otp,
       otpExpires: Date.now() + 10 * 60 * 1000 // OTP valid for 10 minutes
     });
@@ -413,5 +413,56 @@ async function loginVendor(req, res) {
   }
 }
 
+async function loginRider(req, res) {
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
+  if (!emailRegex.test(req.body.email)) {
+    return res.status(404).json({ status: false, message: "Email not valid" });
+  }
 
-module.exports = { createAccount, login, loginVendor, setPIN, validateEmail, createRiderAccount, validatePhone, validatePassword, resendOTP, createRestaurantAccount };
+
+  try {
+    const user = await User.findOne({ email: req.body.email });
+    if (!user) {
+      return res.status(404).json({ status: false, message: "User not found" });
+    }
+
+    // Verify userType
+    if (user.userType !== "Rider") {
+      return res.status(403).json({ status: false, message: "Access denied: Only Riders can log in" });
+    }
+
+    // Check if password is defined
+    if (!user.password || user.password === "non") {
+      return res.status(404).json({ status: false, message: "Password not set" });
+    }
+    try {
+      const isPasswordValid = await bcrypt.compare(req.body.password, user.password);
+      if (!isPasswordValid) {
+        return res.status(400).json({ status: false, message: 'Wrong Passord' });
+      }
+
+    } catch (error) {
+      console.error("Decryption error:", error); // Log decryption error
+      return res.status(500).json({ status: false, message: "Error decrypting password" });
+    }
+
+    const userToken = jwt.sign(
+      {
+        id: user._id,
+        userType: user.userType,
+        email: user.email,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "50d" }
+    );
+
+    const { password, otp, createdAt, updatedAt, otpExpires, ...others } = user._doc;
+    res.status(201).json({ ...others, userToken });
+  } catch (error) {
+    console.error("Login error:", error); // Log login error
+    return res.status(500).json({ status: false, message: error.message });
+  }
+}
+
+
+module.exports = { createAccount, login, loginVendor,loginRider, setPIN, validateEmail, createRiderAccount, validatePhone, validatePassword, resendOTP, createRestaurantAccount };

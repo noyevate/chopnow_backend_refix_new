@@ -1,5 +1,5 @@
 const express = require('express');
-const { createAccount, setPIN, login, loginVendor, validatePhone, createRiderAccount, validateEmail, resendOTP,  validatePassword, createRestaurantAccount } = require('../controllers/authControllers');
+const { createAccount, setPIN, login, loginVendor, loginRider, validatePhone, createRiderAccount, validateEmail, resendOTP,  validatePassword, createRestaurantAccount } = require('../controllers/authControllers');
 
 const router = express.Router();
 
@@ -13,6 +13,7 @@ router.post('/verify-phone/:phone', validatePhone);
 router.post('/verify-password/:password/:id', validatePassword);
 router.post('/verify-email/:email', validateEmail);
 router.post('/vendor', loginVendor);
+router.post('/rider', loginRider);
 
 
 module.exports = router;
