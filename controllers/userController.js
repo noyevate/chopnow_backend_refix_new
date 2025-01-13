@@ -316,7 +316,7 @@ async function resetVendorPassword(req, res) {
         // Step 1: Find the user with the specified email and userType 'Vendor'
         const email  = req.params.email;
         const userType = req.params.userType
-        const user = await User.findOne({ email, userType });
+        const user = await User.findOne({ email, userType: userType });
         if (!user) {
             return res.status(404).json({ status: false, message: userType + " with this email not found" });
         }
