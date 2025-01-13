@@ -330,7 +330,7 @@ async function resetVendorPassword(req, res) {
         user.otpExpires = Date.now() + 10 * 60 * 1000;
         await user.save();
         if (user) {
-            return res.status(404).json({ status: false, message: req.params + userType})
+            return res.status(404).json({ status: false, message: req.params.userType + userType})
         }
 
         // Step 4: Send OTP to the user's email
