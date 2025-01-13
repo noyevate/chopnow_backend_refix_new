@@ -319,7 +319,7 @@ async function resetVendorPassword(req, res) {
         const {email, userType} = req.params
         const user = await User.findOne({ email:email, userType: userType });
         if (!user) {
-            return res.status(404).json({ status: false, message: userType + " with this email not found" });
+            return res.status(404).json({ status: false, message: req.params + userType + " with this email not found" });
         }
 
         // Step 2: Generate a random OTP
