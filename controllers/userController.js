@@ -331,7 +331,7 @@ async function resetVendorPassword(req, res) {
         await user.save();
 
         // Step 4: Send OTP to the user's email
-        await sendEmail(user.email, otp);
+        // await sendEmail(user.email, otp);
         res.status(201).json({
             status: true,
             message: 'Otp sent to your mail.',
