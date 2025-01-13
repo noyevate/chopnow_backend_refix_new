@@ -14,7 +14,7 @@ router.put('/updateUserName/:id/:first_name/:last_name', verifyTokenAndAuthoriza
 router.put('/updateUserName/:id/:phone', verifyTokenAndAuthorization, changePhone);
 router.post('/verifyPin/:id/:pin', verifyTokenAndAuthorization, verifyPin);
 router.put('/changePin/:id/:pin', changePin);
-router.post('/reset-vendor/:email/:usertype', resetVendorPassword);
+router.post('/reset-vendor/:email/:userType', resetVendorPassword);
 router.post('/verify-vendor-otp/:userId/:otp', verifyVendorOtpPin);
 router.post('/resend-vendor-otp/:id', resendVendorOTP);
 router.post('/reverify-vendor/:id/:otp', verifyEmail);

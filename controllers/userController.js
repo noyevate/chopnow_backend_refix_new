@@ -314,9 +314,10 @@ async function changePin(req, res) {
 async function resetVendorPassword(req, res) {
     try {
         // Step 1: Find the user with the specified email and userType 'Vendor'
-        const email  = req.params.email;
-        const userType = req.params.userType
-        const user = await User.findOne({ email, userType: userType });
+        
+
+        const {email, userType} = req.params
+        const user = await User.findOne({ email:email, userType: userType });
         if (!user) {
             return res.status(404).json({ status: false, message: userType + " with this email not found" });
         }
