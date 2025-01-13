@@ -1,6 +1,6 @@
 const User = require('../models/User');
 const { generateOTP, hashPIN } = require('../utils/generate_otp');
-const sendEmail  = require('../utils/smtp_function');
+const { sendEmail } = require('../utils/smtp_function')
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken')
 
