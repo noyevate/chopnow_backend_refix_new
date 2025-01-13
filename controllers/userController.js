@@ -315,9 +315,10 @@ async function resetVendorPassword(req, res) {
     try {
         // Step 1: Find the user with the specified email and userType 'Vendor'
         const email  = req.params.email;
-        const user = await User.findOne({ email, userType: 'Vendor' });
+        const userType = req.params.userType
+        const user = await User.findOne({ email, userType });
         if (!user) {
-            return res.status(404).json({ status: false, message: "Vendor with this email not found" });
+            return res.status(404).json({ status: false, message: userType + " with this email not found" });
         }
 
         // Step 2: Generate a random OTP
@@ -346,6 +347,9 @@ async function resetVendorPassword(req, res) {
         return res.status(500).json({ status: false, message: error.message });
     }
 }
+
+
+
 
 async function verifyVendorOtpPin(req, res) { 
     const { userId, otp } = req.params;  // Fetch userId and otp from req.params
