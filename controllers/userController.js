@@ -471,7 +471,7 @@ async function ChangePassword(req, res) {
 
         res.status(201).json({ status: true, message: 'Passoword reset successfully. You can now log in.' });
     } catch (error) {
-        console.error('Error in changePin:', error);
+        console.error('Error in change Password:', error);
         res.status(500).json({ status: false, message: 'Server error', error });
     }
 }

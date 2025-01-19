@@ -169,4 +169,22 @@ async function getDeliveredAndCancelledOrders(req, res) {
     }
 }
 
-module.exports = { placeOrder, getDeliveredAndCancelledOrders, getAllUserOrders, getUserOrder, getOrdersByRestaurantId, updateOrderStatus, getOrdersByStatusAndPayment, getAllOrdersByRestaurantId }
+async function getAllOrdersByOrderStatus(req, res) {
+    const { orderStatus, paymentStatus } = req.params;
+
+    try {
+        const orders = await Order.find({
+            orderStatus: orderStatus,
+            paymentStatus: paymentStatus
+        }).populate({
+            path: 'orderItems.foodId',
+            select: "imageUrl title rating time"
+        });
+        res.status(200).json(orders);
+
+    } catch (error) {
+        res.status(500).json({ status: false, message: error.message })
+    }
+}
+
+module.exports = { placeOrder, getDeliveredAndCancelledOrders, getAllUserOrders, getUserOrder, getOrdersByRestaurantId, updateOrderStatus, getOrdersByStatusAndPayment, getAllOrdersByRestaurantId, getAllOrdersByOrderStatus }
