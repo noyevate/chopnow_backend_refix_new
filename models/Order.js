@@ -33,6 +33,7 @@ const OrderSchema = new mongoose.Schema({
     restaurantCoords: [Number],
     recipientCoords: [Number],
     driverId: {type: String, default: ''},
+    rejectedBy: [{ type: String }],
     rating: {type: Number, min: 1, max: 5, default: 3},
     feedback: {type: String}, 
     PromoCode:{type: String},
@@ -40,6 +41,7 @@ const OrderSchema = new mongoose.Schema({
     customerPhone: {type: String, default: ''},
     discountAmount: {type: Number},
     notes: {type: String},
+
 },{
     toJSON: {
         transform(doc, ret){
