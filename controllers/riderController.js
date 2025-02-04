@@ -1,10 +1,10 @@
 const Restaurant = require("../models/Restaurant");
-const Order= require("../models/Order");
+const Order = require("../models/Order");
 const Rider = require("../models/Rider");
 
 async function createRider(req, res) {
-    const { userId, vehicleImgUrl, vehicleType, vehicleBrand, plateNumber, guarantors, bankName, bankAccount, bankAccountName, coords} = req.body;
-    
+    const { userId, vehicleImgUrl, vehicleType, vehicleBrand, plateNumber, guarantors, bankName, bankAccount, bankAccountName, coords } = req.body;
+
     try {
 
         const existingRider = await Rider.findOne({ $or: [{ userId }] });
@@ -25,7 +25,7 @@ async function createRider(req, res) {
                 rating: newCreateRider.rating,
                 postalcode: newCreateRider.coords.postalCode,
                 verification: newCreateRider.verification,
-            }, 
+            },
         });
     } catch (error) {
         res.status(500).json({ status: false, message: error.message });
@@ -33,10 +33,10 @@ async function createRider(req, res) {
 }
 
 
-async function searchRestaurant (req, res)  {
+async function searchRestaurant(req, res) {
     try {
         const { title } = req.query;
-        
+
         if (!title) {
             return res.status(400).json({ status: false, message: "Title is required for search." });
         }
@@ -55,10 +55,10 @@ async function searchRestaurant (req, res)  {
 };
 
 
-async function assignRiderToOrder (req, res) {
+async function assignRiderToOrder(req, res) {
     try {
         const { orderId, riderId } = req.params;
-        
+
         if (!orderId || !riderId) {
             return res.status(400).json({ status: false, message: "Order ID and Rider ID are required." });
         }
@@ -79,5 +79,85 @@ async function assignRiderToOrder (req, res) {
 
 
 
+async function rejectOrder(req, res) {
+    try {
+        const { orderId, riderId } = req.params;
 
-module.exports = {createRider, searchRestaurant, assignRiderToOrder}
+        if (!orderId || !riderId) {
+            return res.status(400).json({ status: false, message: "Order ID and Rider ID are required." });
+        }
+
+        const order = await Order.findById(orderId);
+        if (!order) {
+            return res.status(404).json({ status: false, message: "Order not found." });
+        }
+        if (order.driverId == riderId) {
+            return res.status(400).json({ status: false, message: "you've already been assigned to this order" });
+        }
+
+        // Ensure rider is not added multiple times
+        if (!order.rejectedBy.includes(riderId)) {
+            order.rejectedBy.push(riderId);
+            await order.save();
+        }
+
+        res.status(200).json({ status: true, message: "Order rejected successfully.", data: order });
+    } catch (error) {
+        res.status(500).json({ status: false, message: "Server error", error: error.message });
+    }
+};
+
+async function currentTrip(req, res) {
+    try {
+        const { driverId } = req.params;
+
+        if (!driverId) {
+            return res.status(400).json({ status: false, message: "Driver ID is required" });
+        }
+
+        // Find an order assigned to the driver where payment is completed and it's not delivered or cancelled
+        const order = await Order.findOne({
+            driverId: driverId,
+            paymentStatus: "Completed",
+            orderStatus: { $nin: ["Delivered", "Cancelled"] } // Exclude delivered and cancelled orders
+        });
+
+        if (!order) {
+            return res.status(404).json({ status: false, message: "No active trips found for this driver" });
+        }
+
+        res.status(200).json({ status: true, data: order });
+    } catch (error) {
+        res.status(500).json({ status: false, message: "Server error", error: error.message });
+    }
+}
+
+async function completedTrips (req, res) {
+    try {
+        const { driverId } = req.params;
+
+        if (!driverId) {
+            return res.status(400).json({ status: false, message: "Driver ID is required" });
+        }
+
+        const orders = await Order.find({
+            driverId,
+            paymentStatus: "Completed",
+            orderStatus: "Delivered" // Only fetch delivered orders
+        });
+
+        if (orders.length === 0) {
+            return res.status(404).json({ status: false, message: "No completed trips found" });
+        }
+
+        res.status(200).json({ status: true, data: orders });
+    } catch (error) {
+        res.status(500).json({ status: false, message: "Server error", error: error.message });
+    }
+};
+
+
+
+
+
+module.exports = { createRider, searchRestaurant, assignRiderToOrder, rejectOrder, currentTrip, completedTrips }
