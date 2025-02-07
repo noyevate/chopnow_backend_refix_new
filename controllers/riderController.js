@@ -38,7 +38,7 @@ async function searchRestaurant(req, res) {
         const { title } = req.query;
 
         if (!title) {
-            return res.status(400).json({ status: false, message: "Title is required for search." });
+            return res.status(400).json({ status: false, message: "restaurant name is required for search." });
         }
 
         // Perform a case-insensitive search using a regex pattern
@@ -48,7 +48,7 @@ async function searchRestaurant(req, res) {
             return res.status(404).json({ status: false, message: "No restaurants found." });
         }
 
-        res.status(200).json({ status: true, data: restaurants });
+        res.status(200).json(restaurants );
     } catch (error) {
         res.status(500).json({ status: false, message: "Server error", error: error.message });
     }
