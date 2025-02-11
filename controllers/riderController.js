@@ -67,8 +67,12 @@ async function assignRiderToOrder(req, res) {
         if (!order) {
             return res.status(404).json({ status: false, message: "Order not found." });
         }
+        if(order.riderAssigned == true ) {
+            return res.status(404).json({ status: false, message: "Order as already been assigned." });
+        } 
 
         order.driverId = riderId;
+        order.riderAssigned = true
         await order.save();
 
         res.status(200).json({ status: true, message: "Rider assigned successfully.", data: order });

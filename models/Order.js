@@ -41,6 +41,7 @@ const OrderSchema = new mongoose.Schema({
     customerPhone: {type: String, default: ''},
     discountAmount: {type: Number},
     notes: {type: String},
+    riderAssigned: { type: Boolean, default: false }
 
 },{
     toJSON: {
