@@ -182,4 +182,32 @@ async function getAllOrdersByOrderStatus(req, res) {
     }
 }
 
-module.exports = { createRider, searchRestaurant, assignRiderToOrder, rejectOrder, currentTrip, completedTrips, getAllOrdersByOrderStatus }
+async function getOrdersByOnlyRestaurantId(req, res) {
+
+    const { restaurantId, orderStatus, paymentStatus, riderId } = req.params;
+
+    // Validate the required parameters
+    if (!restaurantId || !orderStatus || !paymentStatus) {
+        return res.status(400).json({ status: false, message: "restaurantId, orderStatus, and paymentStatus are required" });
+    }  
+
+    try {
+        const orders = await Order.find({
+            restaurantId: restaurantId,
+            orderStatus: orderStatus,
+            paymentStatus: paymentStatus,
+            driverId: "",
+            riderAssigned: false,
+            riderId: { $nin: [riderId]}
+
+        }).populate({
+            path: 'orderItems.foodId',
+            select: "imageUrl title rating time"
+        });
+        res.status(200).json(orders);
+    } catch (error) {
+        res.status(500).json({ status: false, message: error.message });
+    }
+}
+
+module.exports = { createRider, searchRestaurant, assignRiderToOrder, rejectOrder, currentTrip, completedTrips, getAllOrdersByOrderStatus, getOrdersByOnlyRestaurantId }
