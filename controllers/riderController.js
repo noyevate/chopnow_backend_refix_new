@@ -48,7 +48,7 @@ async function searchRestaurant(req, res) {
             return res.status(404).json({ status: false, message: "No restaurants found." });
         }
 
-        res.status(200).json(restaurants );
+        res.status(200).json(restaurants);
     } catch (error) {
         res.status(500).json({ status: false, message: "Server error", error: error.message });
     }
@@ -67,9 +67,9 @@ async function assignRiderToOrder(req, res) {
         if (!order) {
             return res.status(404).json({ status: false, message: "Order not found." });
         }
-        if(order.riderAssigned == true ) {
+        if (order.riderAssigned == true) {
             return res.status(404).json({ status: false, message: "Order as already been assigned." });
-        } 
+        }
 
         order.driverId = riderId;
         order.riderAssigned = true
@@ -136,7 +136,7 @@ async function currentTrip(req, res) {
     }
 }
 
-async function completedTrips (req, res) {
+async function completedTrips(req, res) {
     try {
         const { driverId } = req.params;
 
@@ -160,8 +160,26 @@ async function completedTrips (req, res) {
     }
 };
 
+async function getAllOrdersByOrderStatus(req, res) {
+    const { orderStatus, paymentStatus, riderId } = req.params;
 
+    try {
+        const orders = await Order.find({
+            orderStatus: orderStatus,
+            paymentStatus: paymentStatus,
+            riderAssigned: false, 
+            driverId: "", 
+            rejectedBy: { $nin: [riderId] } 
+        }).populate({
+            path: 'orderItems.foodId',
+            select: "imageUrl title rating time"
+        });
 
+        res.status(200).json({ status: true, data: orders });
 
+    } catch (error) {
+        res.status(500).json({ status: false, message: error.message });
+    }
+}
 
-module.exports = { createRider, searchRestaurant, assignRiderToOrder, rejectOrder, currentTrip, completedTrips }
+module.exports = { createRider, searchRestaurant, assignRiderToOrder, rejectOrder, currentTrip, completedTrips, getAllOrdersByOrderStatus }
