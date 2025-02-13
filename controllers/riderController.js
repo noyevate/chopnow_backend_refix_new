@@ -130,7 +130,7 @@ async function currentTrip(req, res) {
             return res.status(404).json({ status: false, message: "No active trips found for this driver" });
         }
 
-        res.status(200).json({ status: true, data: order });
+        res.status(200).json(order);
     } catch (error) {
         res.status(500).json({ status: false, message: "Server error", error: error.message });
     }
@@ -154,7 +154,7 @@ async function completedTrips(req, res) {
             return res.status(404).json({ status: false, message: "No completed trips found" });
         }
 
-        res.status(200).json({ status: true, data: orders });
+        res.status(200).json(orders);
     } catch (error) {
         res.status(500).json({ status: false, message: "Server error", error: error.message });
     }
@@ -175,7 +175,7 @@ async function getAllOrdersByOrderStatus(req, res) {
             select: "imageUrl title rating time"
         });
 
-        res.status(200).json( orders );
+        res.status(200).json(orders);
 
     } catch (error) {
         res.status(500).json({ status: false, message: error.message });
