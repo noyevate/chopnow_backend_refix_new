@@ -7,12 +7,12 @@ async function rateRider(req, res) {
 
     try {
 
-        const existingRating = await Rating.findOne({ riderId, userId, orderId });
+        const existingRating = await Rating.findOne({ orderId });
         
         if (existingRating) {
             return res.status(400).json({ status: false, message: "You have already rated this rider for this order." });
         }
-        
+
         const newRating = new Rating({
             riderId: riderId,
             orderId: orderId,
@@ -45,7 +45,7 @@ async function fetchRatingByOrderId(req, res) {
             return res.status(400).json({ status: false, message: "Order ID and Rider ID are required." });
         }
 
-        const rating = await RiderRating.findOne({ orderId, riderId });
+        const rating = await Rating.findOne({ orderId, riderId });
 
         if (!rating) {
             return res.status(404).json({ status: false, message: "Rating not found." });
@@ -68,7 +68,7 @@ async function getRatingsByRider(req, res) {
         }
 
         // Find all ratings for the given riderId
-        const ratings = await RiderRating.find({ riderId });
+        const ratings = await Rating.find({ riderId });
 
         if (ratings.length === 0) {
             return res.status(404).json({ status: false, message: "No ratings found for this rider." });
@@ -89,7 +89,7 @@ async function deleteRiderRating(req, res) {
         }
 
         // Find all ratings for the given riderId
-        const ratings = await RiderRating.findByIdAndDelete({ id });
+        const ratings = await Rating.findByIdAndDelete({ id });
 
         if (ratings.length === 0) {
             return res.status(404).json({ status: false, message: "No ratings found for this rider." });

@@ -81,8 +81,6 @@ async function assignRiderToOrder(req, res) {
     }
 };
 
-
-
 async function rejectOrder(req, res) {
     try {
         const { orderId, riderId } = req.params;
@@ -119,11 +117,10 @@ async function currentTrip(req, res) {
             return res.status(400).json({ status: false, message: "Driver ID is required" });
         }
 
-        // Find an order assigned to the driver where payment is completed and it's not delivered or cancelled
         const order = await Order.findOne({
             driverId: driverId,
             paymentStatus: "Completed",
-            orderStatus: { $nin: ["Delivered", "Cancelled"] } // Exclude delivered and cancelled orders
+            orderStatus: { $nin: ["Delivered", "Cancelled"] }
         });
 
         if (!order) {
@@ -210,4 +207,29 @@ async function getOrdersByOnlyRestaurantId(req, res) {
     }
 }
 
-module.exports = { createRider, searchRestaurant, assignRiderToOrder, rejectOrder, currentTrip, completedTrips, getAllOrdersByOrderStatus, getOrdersByOnlyRestaurantId }
+
+async function getDeliveredOrdersByRider(req, res) {
+    const { driverId } = req.params;
+
+    try {
+        if (!driverId) {
+            return res.status(400).json({ status: false, message: "Driver Id is required" });
+        }
+
+        const orders = await Order.find({
+            driverId: driverId,
+            orderStatus: "Delivered",
+            riderStatus: "OD"
+        }).populate({
+            path: 'orderItems.foodId',
+            select: "imageUrl title rating time"
+        });
+
+        res.status(200).json({ status: true, message: "Delivered orders fetched successfully", data: orders });
+    } catch (error) {
+        res.status(500).json({ status: false, message: "Server error", error: error.message });
+    }
+}
+
+
+module.exports = { createRider, searchRestaurant, assignRiderToOrder, rejectOrder, currentTrip, completedTrips, getAllOrdersByOrderStatus, getOrdersByOnlyRestaurantId, getDeliveredOrdersByRider }
