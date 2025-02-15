@@ -1,5 +1,5 @@
 const Rating = require("../models/RiderRating");
-const Restaurant = require("../models/Restaurant");
+const Rider = require("../models/Rider");
 const Food = require("../models/Food");
 
 async function rateRider(req, res) {
@@ -12,17 +12,17 @@ async function rateRider(req, res) {
             user: userId,
             rating,
             comment,
-            name
+            name,
         });
 
         await newRating.save();
 
         // Recalculate the average rating
-        const ratings = await Rating.find({ restaurant: Restaurant });
+        const ratings = await Rating.find({ riderId: riderId });
         const totalRating = ratings.reduce((acc, rate) => acc + rate.rating, 0);
         const avgRating = (totalRating / ratings.length).toFixed(1);
 
-        await Restaurant.findByIdAndUpdate(Restaurant, { rating: avgRating, ratingCount: ratings.length });
+        await Rating.findByIdAndUpdate(riderId, { rating: avgRating, ratingCount: ratings.length });
 
         res.status(201).send(newRating);
     } catch (err) {
@@ -73,5 +73,29 @@ async function getRatingsByRider(req, res) {
     }
 }
 
+async function deleteRiderRating(req, res) {
+    try {
+        const { id } = req.params;
 
-module.exports = { rateRider, fetchRatingByOrderId, getRatingsByRider }
+        if (!id) {
+            return res.status(400).json({ status: false, message: " ID is required." });
+        }
+
+        // Find all ratings for the given riderId
+        const ratings = await RiderRating.findByIdAndDelete({ id });
+
+        if (ratings.length === 0) {
+            return res.status(404).json({ status: false, message: "No ratings found for this rider." });
+        }
+
+        res.status(200).json({message: "rating deleted"} );
+    } catch (error) {
+        res.status(500).json({ status: false, message: "Server error", error: error.message });
+    }
+}
+
+
+
+
+
+module.exports = { rateRider, fetchRatingByOrderId, getRatingsByRider, deleteRiderRating }
