@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const RiderRatingSchema = new mongoose.Schema({
-    restaurantId: { type: String, default: "" },
+    riderId: { type: String, default: "" },
     userId: { type: String, default: "" },
     orderId: { type: String, default: "" },
     rating: { type: Number, min: 1, max: 5, required: true },
