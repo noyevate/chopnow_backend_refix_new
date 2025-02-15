@@ -6,6 +6,13 @@ async function rateRider(req, res) {
     const { riderId, userId, orderId, rating, comment, name } = req.body;
 
     try {
+
+        const existingRating = await Rating.findOne({ riderId, userId, orderId });
+        
+        if (existingRating) {
+            return res.status(400).json({ status: false, message: "You have already rated this rider for this order." });
+        }
+        
         const newRating = new Rating({
             riderId: riderId,
             orderId: orderId,
@@ -93,8 +100,6 @@ async function deleteRiderRating(req, res) {
         res.status(500).json({ status: false, message: "Server error", error: error.message });
     }
 }
-
-
 
 
 
