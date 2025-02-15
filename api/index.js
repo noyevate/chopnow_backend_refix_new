@@ -15,7 +15,7 @@ const OrderRoute = require("../routes/orderRoute");
 const AdditiveRoute = require("../routes/additiveRoute");
 const PackRoute = require("../routes/packRoute");
 const RiderRoute = require("../routes/riderRoutes");
-const RiderRatingRoute = require("../routes/riderRatingRoute.");
+const RiderRatingRoute = require("../routes/riderRatingRoutes");
 
 
 dotenv.config();
