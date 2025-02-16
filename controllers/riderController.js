@@ -1,6 +1,7 @@
 const Restaurant = require("../models/Restaurant");
 const Order = require("../models/Order");
 const Rider = require("../models/Rider");
+const RiderRating = require('../models/RiderRating');
 
 async function createRider(req, res) {
     const { userId, vehicleImgUrl, vehicleType, vehicleBrand, plateNumber, guarantors, bankName, bankAccount, bankAccountName, coords } = req.body;
@@ -208,14 +209,41 @@ async function getOrdersByOnlyRestaurantId(req, res) {
 }
 
 
+// async function getDeliveredOrdersByRider(req, res) {
+//     const { driverId } = req.params;
+
+//     try {
+//         if (!driverId) {
+//             return res.status(400).json({ status: false, message: "Driver Id is required" });
+//         }
+
+//         const orders = await Order.find({
+//             driverId: driverId,
+//             orderStatus: "Delivered",
+//             riderStatus: "OD"
+//         }).populate({
+//             path: 'orderItems.foodId',
+//             select: "imageUrl title rating time"
+//         });
+
+//         res.status(200).json( orders );
+//     } catch (error) {
+//         res.status(500).json({ status: false, message: "Server error", error: error.message });
+//     }
+// }
+
+
+
 async function getDeliveredOrdersByRider(req, res) {
     const { driverId } = req.params;
 
     try {
+        // Check if driverId is provided
         if (!driverId) {
             return res.status(400).json({ status: false, message: "Driver Id is required" });
         }
 
+        // Fetch delivered orders with riderStatus as OD
         const orders = await Order.find({
             driverId: driverId,
             orderStatus: "Delivered",
@@ -225,11 +253,28 @@ async function getDeliveredOrdersByRider(req, res) {
             select: "imageUrl title rating time"
         });
 
-        res.status(200).json({ status: true, message: "Delivered orders fetched successfully", data: orders });
+        // If no orders are found
+        if (orders.length === 0) {
+            return res.status(404).json({ status: false, message: "No delivered orders found" });
+        }
+
+        // Fetch rider rating for each order
+        const ordersWithRatings = await Promise.all(
+            orders.map(async (order) => {
+                const rating = await RiderRating.findOne({ orderId: order._id, riderId: driverId });
+                return {
+                    ...order._doc,
+                    riderRating: rating || null
+                };
+            })
+        );
+
+        res.status(200).json(ordersWithRatings);
     } catch (error) {
-        res.status(500).json({ status: false, message: "Server error", error: error.message });
+        res.status(500).json({ status: false, message: "Server error"});
     }
 }
+
 
 
 module.exports = { createRider, searchRestaurant, assignRiderToOrder, rejectOrder, currentTrip, completedTrips, getAllOrdersByOrderStatus, getOrdersByOnlyRestaurantId, getDeliveredOrdersByRider }
