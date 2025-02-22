@@ -26,6 +26,7 @@ async function createRider(req, res) {
                 rating: newCreateRider.rating,
                 postalcode: newCreateRider.coords.postalCode,
                 verification: newCreateRider.verification,
+                coord: newCreateRider.coords
             },
         });
     } catch (error) {
