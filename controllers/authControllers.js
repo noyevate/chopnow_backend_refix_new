@@ -1,5 +1,7 @@
 // controllers/userController.js
 const User = require('../models/User');
+const Rider = require("../models/Rider");
+
 const { generateOTP, hashPIN } = require('../utils/generate_otp');
 const { sendOTP } = require('../utils/send_otp');
 const { sendEmail } = require('../utils/smtp_function')
@@ -416,9 +418,8 @@ async function loginVendor(req, res) {
 async function loginRider(req, res) {
   const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
   if (!emailRegex.test(req.body.email)) {
-    return res.status(404).json({ status: false, message: "Email not valid" });
+    return res.status(400).json({ status: false, message: "Email not valid" });
   }
-
 
   try {
     const user = await User.findOne({ email: req.body.email });
@@ -431,20 +432,23 @@ async function loginRider(req, res) {
       return res.status(403).json({ status: false, message: "Access denied: Only Riders can log in" });
     }
 
-    // Check if password is defined
+    // Check if password is set
     if (!user.password || user.password === "non") {
       return res.status(404).json({ status: false, message: "Password not set" });
     }
+
     try {
       const isPasswordValid = await bcrypt.compare(req.body.password, user.password);
       if (!isPasswordValid) {
-        return res.status(400).json({ status: false, message: 'Wrong Passord' });
+        return res.status(400).json({ status: false, message: "Wrong Password" });
       }
-
     } catch (error) {
-      console.error("Decryption error:", error); // Log decryption error
+      console.error("Decryption error:", error);
       return res.status(500).json({ status: false, message: "Error decrypting password" });
     }
+
+    // Try fetching the rider details (but don't stop execution if it fails)
+    let rider = await Rider.findOne({ userId: user._id }).lean(); // Use .lean() for a plain object
 
     const userToken = jwt.sign(
       {
@@ -456,10 +460,16 @@ async function loginRider(req, res) {
       { expiresIn: "50d" }
     );
 
-    const { password, otp, createdAt, updatedAt, otpExpires, ...others } = user._doc;
-    res.status(201).json({ ...others, userToken });
+    const { password, otp, createdAt, updatedAt, OTP_expires, ...others } = user._doc;
+
+    res.status(200).json({ 
+      ...others, 
+      rider: rider || null,  // If no rider is found, return `null` instead of stopping
+      userToken 
+    });
+    
   } catch (error) {
-    console.error("Login error:", error); // Log login error
+    console.error("Login error:", error);
     return res.status(500).json({ status: false, message: error.message });
   }
 }
