@@ -2,6 +2,7 @@ const Restaurant = require("../models/Restaurant");
 const Order = require("../models/Order");
 const Rider = require("../models/Rider");
 const RiderRating = require('../models/RiderRating');
+const User = require('../models/User');
 
 async function createRider(req, res) {
     const { userId, vehicleImgUrl, vehicleType, vehicleBrand, plateNumber, guarantors, bankName, bankAccount, bankAccountName, coords } = req.body;
@@ -19,15 +20,21 @@ async function createRider(req, res) {
         }
         const newCreateRider = new Rider(req.body);
         await newCreateRider.save();
+
+         // Fetch user details based on userId
+         const user = await User.findById(userId).select("first_name last_name"); // Select only required fields
         res.status(201).json({
             status: true, message: "Rider added Successfully", newCreateRider: {
+                
                 riderId: newCreateRider._id,
                 vehicle: newCreateRider.vehicleType,
                 rating: newCreateRider.rating,
                 postalcode: newCreateRider.coords.postalCode,
                 verification: newCreateRider.verification,
-                coord: newCreateRider.coords
+                coord: newCreateRider.coords,
+                userImg: newCreateRider.userImageUrl
             },
+            user: user || null,
         });
     } catch (error) {
         res.status(500).json({ status: false, message: error.message });
