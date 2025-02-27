@@ -21,11 +21,11 @@ async function createRider(req, res) {
         const newCreateRider = new Rider(req.body);
         await newCreateRider.save();
 
-         // Fetch user details based on userId
-         const user = await User.findById(userId).select("first_name last_name"); // Select only required fields
+        // Fetch user details based on userId
+        const user = await User.findById(userId).select("first_name last_name"); // Select only required fields
         res.status(201).json({
             status: true, message: "Rider added Successfully", newCreateRider: {
-                
+
                 riderId: newCreateRider._id,
                 vehicle: newCreateRider.vehicleType,
                 rating: newCreateRider.rating,
@@ -173,9 +173,9 @@ async function getAllOrdersByOrderStatus(req, res) {
         const orders = await Order.find({
             orderStatus: orderStatus,
             paymentStatus: paymentStatus,
-            riderAssigned: false, 
-            driverId: "", 
-            rejectedBy: { $nin: [riderId] } 
+            riderAssigned: false,
+            driverId: "",
+            rejectedBy: { $nin: [riderId] }
         }).populate({
             path: 'orderItems.foodId',
             select: "imageUrl title rating time"
@@ -195,7 +195,7 @@ async function getOrdersByOnlyRestaurantId(req, res) {
     // Validate the required parameters
     if (!restaurantId || !orderStatus || !paymentStatus) {
         return res.status(400).json({ status: false, message: "restaurantId, orderStatus, and paymentStatus are required" });
-    }  
+    }
 
     try {
         const orders = await Order.find({
@@ -204,7 +204,7 @@ async function getOrdersByOnlyRestaurantId(req, res) {
             paymentStatus: paymentStatus,
             driverId: "",
             riderAssigned: false,
-            riderId: { $nin: [riderId]}
+            riderId: { $nin: [riderId] }
 
         }).populate({
             path: 'orderItems.foodId',
@@ -279,10 +279,99 @@ async function getDeliveredOrdersByRider(req, res) {
 
         res.status(200).json(ordersWithRatings);
     } catch (error) {
-        res.status(500).json({ status: false, message: "Server error"});
+        res.status(500).json({ status: false, message: "Server error" });
+    }
+}
+
+async function updateUserImageUrl(req, res) {
+    const { riderId } = req.params;
+    const { userImageUrl } = req.body;
+
+    try {
+        const rider = await Rider.findById(riderId);
+        if (!rider) {
+            return res.status(404).json({ status: false, message: "Rider not found" });
+        }
+
+        
+        rider.userImageUrl = decodeURIComponent(userImageUrl); // Decode URL
+        await rider.save();
+
+        res.status(200).json({ status: true, message: "User image updated successfully", userImageUrl: rider.userImageUrl });
+
+    } catch (error) {
+        res.status(500).json({ status: false, message: "Failed to update user image", error: error.message });
+    }
+}
+
+
+async function updateDriverLicenseImageUrl(req, res) {
+    const { riderId,  } = req.params;
+
+    const { driverLicenseImageUrl } = req.body;
+
+    try {
+        const rider = await Rider.findById(riderId);
+        if (!rider) {
+            return res.status(404).json({ status: false, message: "Rider not found" });
+        }
+
+        rider.driverLicenseImageUrl = driverLicenseImageUrl;
+        await rider.save();
+
+        res.status(200).json({ status: true, message: "Driver license image updated successfully", driverLicenseImageUrl: rider.driverLicenseImageUrl });
+
+    } catch (error) {
+        res.status(500).json({ status: false, message: "Failed to update driver license image", error: error.message });
+    }
+}
+
+async function updateParticularsImageUrl(req, res) {
+    const { riderId } = req.params;
+
+    const { particularsImageUrl } = req.body;
+
+    try {
+        const rider = await Rider.findById(riderId);
+        if (!rider) {
+            return res.status(404).json({ status: false, message: "Rider not found" });
+        }
+
+        rider.particularsImageUrl = particularsImageUrl;
+        await rider.save();
+
+        res.status(200).json({ status: true, message: "Particulars image updated successfully", particularsImageUrl: rider.particularsImageUrl });
+
+    } catch (error) {
+        res.status(500).json({ status: false, message: "Failed to update particulars image", error: error.message });
+    }
+}
+
+async function updateVehicleImgUrl(req, res) {
+    const { riderId,  } = req.params;
+    const { vehicleImgUrl } = req.body;
+
+    try {
+        const rider = await Rider.findById(riderId);
+        if (!rider) {
+            return res.status(404).json({ status: false, message: "Rider not found" });
+        }
+
+        rider.vehicleImgUrl = vehicleImgUrl;
+        await rider.save();
+
+        res.status(200).json({ status: true, message: "Vehicle image updated successfully", vehicleImgUrl: rider.vehicleImgUrl });
+
+    } catch (error) {
+        res.status(500).json({ status: false, message: "Failed to update vehicle image", error: error.message });
     }
 }
 
 
 
-module.exports = { createRider, searchRestaurant, assignRiderToOrder, rejectOrder, currentTrip, completedTrips, getAllOrdersByOrderStatus, getOrdersByOnlyRestaurantId, getDeliveredOrdersByRider }
+
+
+module.exports = { createRider, searchRestaurant, assignRiderToOrder, rejectOrder, currentTrip, completedTrips, 
+    getAllOrdersByOrderStatus, getOrdersByOnlyRestaurantId, getDeliveredOrdersByRider, 
+    updateUserImageUrl, updateDriverLicenseImageUrl, updateParticularsImageUrl, updateVehicleImgUrl
+ }
