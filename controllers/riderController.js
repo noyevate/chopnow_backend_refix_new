@@ -294,7 +294,6 @@ async function updateUserImageUrl(req, res) {
         }
 
         
-        rider.userImageUrl = decodeURIComponent(userImageUrl); // Decode URL
         await rider.save();
 
         res.status(200).json({ status: true, message: "User image updated successfully", userImageUrl: rider.userImageUrl });
