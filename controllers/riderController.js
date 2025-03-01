@@ -285,7 +285,7 @@ async function getDeliveredOrdersByRider(req, res) {
 
 async function updateUserImageUrl(req, res) {
     const { riderId } = req.params;
-    const { userImageUrl } = req.body;
+    let { userImageUrl } = req.body;
 
     try {
         const rider = await Rider.findById(riderId);
@@ -293,10 +293,17 @@ async function updateUserImageUrl(req, res) {
             return res.status(404).json({ status: false, message: "Rider not found" });
         }
 
-        
+        // Encode special characters to prevent corruption
+        userImageUrl = encodeURIComponent(userImageUrl);
+
+        rider.userImageUrl = userImageUrl;
         await rider.save();
 
-        res.status(200).json({ status: true, message: "User image updated successfully", userImageUrl: rider.userImageUrl });
+        res.status(200).json({ 
+            status: true, 
+            message: "User image updated successfully", 
+            userImageUrl: decodeURIComponent(rider.userImageUrl) // Return a properly formatted URL
+        });
 
     } catch (error) {
         res.status(500).json({ status: false, message: "Failed to update user image", error: error.message });
