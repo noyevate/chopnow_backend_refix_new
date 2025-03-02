@@ -293,8 +293,6 @@ async function updateUserImageUrl(req, res) {
             return res.status(404).json({ status: false, message: "Rider not found" });
         }
 
-        // Encode special characters to prevent corruption
-        userImageUrl = encodeURIComponent(userImageUrl);
 
         rider.userImageUrl = userImageUrl;
         await rider.save();
@@ -302,7 +300,7 @@ async function updateUserImageUrl(req, res) {
         res.status(200).json({
             status: true,
             message: "User image updated successfully",
-            userImageUrl: decodeURIComponent(rider.userImageUrl) // Return a properly formatted URL
+            userImageUrl: rider.userImageUrl // Return a properly formatted URL
         });
 
     } catch (error) {
