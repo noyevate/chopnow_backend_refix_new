@@ -216,32 +216,6 @@ async function getOrdersByOnlyRestaurantId(req, res) {
     }
 }
 
-
-// async function getDeliveredOrdersByRider(req, res) {
-//     const { driverId } = req.params;
-
-//     try {
-//         if (!driverId) {
-//             return res.status(400).json({ status: false, message: "Driver Id is required" });
-//         }
-
-//         const orders = await Order.find({
-//             driverId: driverId,
-//             orderStatus: "Delivered",
-//             riderStatus: "OD"
-//         }).populate({
-//             path: 'orderItems.foodId',
-//             select: "imageUrl title rating time"
-//         });
-
-//         res.status(200).json( orders );
-//     } catch (error) {
-//         res.status(500).json({ status: false, message: "Server error", error: error.message });
-//     }
-// }
-
-
-
 async function getDeliveredOrdersByRider(req, res) {
     const { driverId } = req.params;
 
@@ -318,12 +292,11 @@ async function updateDriverLicenseImageUrl(req, res) {
             return res.status(404).json({ status: false, message: "Rider not found" });
         }
 
-        driverLicenseImageUrl = encodeURIComponent(driverLicenseImageUrl);
 
         rider.driverLicenseImageUrl = driverLicenseImageUrl;
         await rider.save();
 
-        res.status(200).json({ status: true, message: "Driver license image updated successfully", driverLicenseImageUrl: decodeURIComponent(rider.driverLicenseImageUrl) });
+        res.status(200).json({ status: true, message: "Driver license image updated successfully", driverLicenseImageUrl: rider.driverLicenseImageUrl });
 
     } catch (error) {
         res.status(500).json({ status: false, message: "Failed to update driver license image", error: error.message });
@@ -341,12 +314,10 @@ async function updateParticularsImageUrl(req, res) {
             return res.status(404).json({ status: false, message: "Rider not found" });
         }
 
-        particularsImageUrl = encodeURIComponent(particularsImageUrl);
-
         rider.particularsImageUrl = particularsImageUrl;
         await rider.save();
 
-        res.status(200).json({ status: true, message: "Particulars image updated successfully", particularsImageUrl: decodeURIComponent(rider.particularsImageUrl) });
+        res.status(200).json({ status: true, message: "Particulars image updated successfully", particularsImageUrl: rider.particularsImageUrl });
 
     } catch (error) {
         res.status(500).json({ status: false, message: "Failed to update particulars image", error: error.message });
@@ -363,12 +334,11 @@ async function updateVehicleImgUrl(req, res) {
             return res.status(404).json({ status: false, message: "Rider not found" });
         }
 
-        vehicleImgUrl = encodeURIComponent(vehicleImgUrl);
 
         rider.vehicleImgUrl = vehicleImgUrl;
         await rider.save();
 
-        res.status(200).json({ status: true, message: "Vehicle image updated successfully", vehicleImgUrl: decodeURIComponent(rider.vehicleImgUrl) });
+        res.status(200).json({ status: true, message: "Vehicle image updated successfully", vehicleImgUrl: rider.vehicleImgUrl });
 
     } catch (error) {
         res.status(500).json({ status: false, message: "Failed to update vehicle image", error: error.message });
