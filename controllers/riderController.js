@@ -299,9 +299,9 @@ async function updateUserImageUrl(req, res) {
         rider.userImageUrl = userImageUrl;
         await rider.save();
 
-        res.status(200).json({ 
-            status: true, 
-            message: "User image updated successfully", 
+        res.status(200).json({
+            status: true,
+            message: "User image updated successfully",
             userImageUrl: decodeURIComponent(rider.userImageUrl) // Return a properly formatted URL
         });
 
@@ -310,10 +310,8 @@ async function updateUserImageUrl(req, res) {
     }
 }
 
-
 async function updateDriverLicenseImageUrl(req, res) {
-    const { riderId,  } = req.params;
-
+    const { riderId, } = req.params;
     let { driverLicenseImageUrl } = req.body;
 
     try {
@@ -358,8 +356,8 @@ async function updateParticularsImageUrl(req, res) {
 }
 
 async function updateVehicleImgUrl(req, res) {
-    const { riderId,  } = req.params;
-    const { vehicleImgUrl } = req.body;
+    const { riderId, } = req.params;
+    let { vehicleImgUrl } = req.body;
 
     try {
         const rider = await Rider.findById(riderId);
@@ -383,7 +381,8 @@ async function updateVehicleImgUrl(req, res) {
 
 
 
-module.exports = { createRider, searchRestaurant, assignRiderToOrder, rejectOrder, currentTrip, completedTrips, 
-    getAllOrdersByOrderStatus, getOrdersByOnlyRestaurantId, getDeliveredOrdersByRider, 
+module.exports = {
+    createRider, searchRestaurant, assignRiderToOrder, rejectOrder, currentTrip, completedTrips,
+    getAllOrdersByOrderStatus, getOrdersByOnlyRestaurantId, getDeliveredOrdersByRider,
     updateUserImageUrl, updateDriverLicenseImageUrl, updateParticularsImageUrl, updateVehicleImgUrl
- }
+}
