@@ -335,7 +335,7 @@ async function updateDriverLicenseImageUrl(req, res) {
 async function updateParticularsImageUrl(req, res) {
     const { riderId } = req.params;
 
-    const { particularsImageUrl } = req.body;
+    let { particularsImageUrl } = req.body;
 
     try {
         const rider = await Rider.findById(riderId);
