@@ -102,18 +102,16 @@ async function getOrdersByRestaurantId(req, res) {
 
 
 async function updateOrderStatus(req, res) { 
-    const { orderId } = req.params;
-    const { status } = req.body;
-
+    const { orderId, orderStatus } = req.params;
     try {
         // Validate the order status
         const validStatuses = ["Placed", "Accepted", "Preparing", "Manual", "Cancelled", "Delivered", "Ready", "Out_For_Delivery"];
-        if (!validStatuses.includes(status)) {
+        if (!validStatuses.includes(orderStatus)) {
             return res.status(400).json({ status: false, message: "Invalid order status" });
         }
 
         // Find and update the order
-        const order = await Order.findByIdAndUpdate(orderId, { orderStatus: status }, { new: true });
+        const order = await Order.findByIdAndUpdate(orderId, { orderStatus: orderStatus }, { new: true });
 
         if (!order) { 
             return res.status(404).json({ status: false, message: "Order not found" });
@@ -131,11 +129,15 @@ async function updateOrderStatus(req, res) {
             "Out_For_Delivery": { title: "Out for Delivery", body: "Your order is on its way to you!" }
         };
 
-        const { title, body } = statusMessages[status] || { title: "Order Update", body: `Your order is now ${status}` };
+        const { title, body } = statusMessages[orderStatus] || { title: "Order Update", body: `Your order is now ${orderStatus}` };
 
         // Send push notification if an FCM token is available
-        if (order.fcm) {
-            await pushNotificationController.sendPushNotification(order.fcm, title, body, order);
+        try {
+            if (order.customerFcm) {
+                await pushNotificationController.sendPushNotification(order.customerFcm, title, body, order);
+            }
+        } catch(e) {
+            console.log(`error ${e}`)
         }
 
         res.status(200).json({ status: true, message: "Order status updated successfully", order });
