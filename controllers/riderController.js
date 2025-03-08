@@ -3,6 +3,8 @@ const Order = require("../models/Order");
 const Rider = require("../models/Rider");
 const RiderRating = require('../models/RiderRating');
 const User = require('../models/User');
+const pushNotificationController = require("./pushNotificationController")
+
 
 async function createRider(req, res) {
     const { userId, vehicleImgUrl, vehicleType, vehicleBrand, plateNumber, guarantors, bankName, bankAccount, bankAccountName, coords } = req.body;
@@ -79,10 +81,20 @@ async function assignRiderToOrder(req, res) {
         if (order.riderAssigned == true) {
             return res.status(404).json({ status: false, message: "Order as already been assigned." });
         }
+        
 
         order.driverId = riderId;
         order.riderAssigned = true
+        order.riderStatus = "RA"
         await order.save();
+
+        try {
+            if (order.customerFcm) {
+                await pushNotificationController.sendPushNotification(order.customerFcm, "Rider Assigned", "A rider as being assinged to your order", order);
+            }
+        } catch (e) {
+            console.log(`error ${e}`)
+        }
 
         res.status(200).json({ status: true, message: "Rider assigned successfully.", data: order });
     } catch (error) {

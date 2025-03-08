@@ -143,7 +143,7 @@ async function updateOrderStatus(req, res) {
         res.status(200).json({ status: true, message: "Order status updated successfully", order });
 
     } catch (error) {
-        console.error("❌ Error updating order status:", error);
+        console.error("Error updating order status:", error);
         res.status(500).json({ status: false, message: error.message });
     }
 }
