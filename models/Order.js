@@ -43,7 +43,6 @@ const OrderSchema = new mongoose.Schema({
     discountAmount: {type: Number},
     notes: {type: String},
     riderAssigned: { type: Boolean, default: false }
-
 },{
     toJSON: {
         transform(doc, ret){

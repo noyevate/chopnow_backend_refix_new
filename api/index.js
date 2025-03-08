@@ -18,6 +18,8 @@ const RiderRoute = require("../routes/riderRoutes");
 const RiderRatingRoute = require("../routes/riderRatingRoutes");
 const PriceRoute = require("../routes/priceRoute");
 
+require("../services/firebaseConfig.js")
+
 dotenv.config();
 
 mongoose.connect(process.env.MONGOURL).then(() => {

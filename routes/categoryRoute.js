@@ -5,5 +5,6 @@ const categoryController = require('../controllers/categoryController');
 router.post("/", categoryController.createCategory);
 router.get("/", categoryController.getAllCategories);
 router.get("/random", categoryController.getRandomCategories);
+router.patch("/update/:categoryId", categoryController.updateCategoryImage);
 
 module.exports = router;

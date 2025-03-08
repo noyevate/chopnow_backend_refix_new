@@ -1,6 +1,7 @@
 // controllers/userController.js
 const User = require('../models/User');
 const Rider = require("../models/Rider");
+const Restaurant = require("../models/Restaurant");
 
 const { generateOTP, hashPIN } = require('../utils/generate_otp');
 const { sendOTP } = require('../utils/send_otp');
@@ -83,7 +84,7 @@ async function validatePassword(req, res) {
 
 
 async function createAccount(req, res) {
-  const { first_name, last_name, phone, email } = req.body;
+  const { first_name, last_name, phone, email, fcm } = req.body;
 
   try {
     // Validate email
@@ -102,7 +103,7 @@ async function createAccount(req, res) {
     const formattedPhone = phone.startsWith('+234') ? phone : '+234' + phone.replace(/^0/, '');
 
     const existingUser = await User.findOne({ phone: formattedPhone });
-    if (existingUser) {
+    if (existingUser.userType == "Client") {
       return res.json({ status: false, message: 'Phone number already exists. Login to continue' });
     }
 
@@ -116,14 +117,15 @@ async function createAccount(req, res) {
       phone: formattedPhone,
       email,
       otp: otp,
-      otpExpires: Date.now() + 10 * 60 * 1000 // OTP valid for 10 minutes
+      otpExpires: Date.now() + 10 * 60 * 1000,
+      fcm // OTP valid for 10 minutes
     });
 
     await user.save();
 
     // Send OTP
 
-    await sendOTP(formattedPhone, otp);
+    await sendEmail(user.email, otp);
 
     res.status(201).json({
       status: true,
@@ -143,7 +145,7 @@ async function createAccount(req, res) {
 }
 
 async function createRestaurantAccount(req, res) {
-  const { first_name, last_name, phone, email, password } = req.body;
+  const { first_name, last_name, phone, email, password, fcm } = req.body;
 
   try {
     // Validate email
@@ -179,7 +181,8 @@ async function createRestaurantAccount(req, res) {
       email,
       userType: "Vendor",
       otp: otp, //otp,
-      otpExpires: Date.now() + 10 * 60 * 1000 // OTP valid for 10 minutes
+      otpExpires: Date.now() + 10 * 60 * 1000,
+      fcm // OTP valid for 10 minutes
     });
 
 
@@ -207,7 +210,7 @@ async function createRestaurantAccount(req, res) {
 }
 
 async function createRiderAccount(req, res) {
-  const { first_name, last_name, phone, email, password } = req.body;
+  const { first_name, last_name, phone, email, password, fcm } = req.body;
 
   try {
     // Validate email
@@ -243,7 +246,8 @@ async function createRiderAccount(req, res) {
       email,
       userType: "Rider",
       otp: otp, //otp,
-      otpExpires: Date.now() + 10 * 60 * 1000 // OTP valid for 10 minutes
+      otpExpires: Date.now() + 10 * 60 * 1000, // OTP valid for 10 minutes
+      fcm
     });
 
 
@@ -397,6 +401,8 @@ async function loginVendor(req, res) {
       return res.status(500).json({ status: false, message: "Error decrypting password" });
     }
 
+    let restaurant = await Restaurant.findOne({ userId: user._id }).lean(); // Use .lean() for a plain object
+
     const userToken = jwt.sign(
       {
         id: user._id,
@@ -408,7 +414,7 @@ async function loginVendor(req, res) {
     );
 
     const { password, otp, createdAt, updatedAt, otpExpires, ...others } = user._doc;
-    res.status(201).json({ ...others, userToken });
+    res.status(201).json({ ...others, userToken, restaurant: restaurant || null });
   } catch (error) {
     console.error("Login error:", error); // Log login error
     return res.status(500).json({ status: false, message: error.message });

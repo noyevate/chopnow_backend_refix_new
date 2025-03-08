@@ -1,4 +1,8 @@
 const Order = require("../models/Order");
+const admin = require('firebase-admin');
+const User = require("../models/User")
+const pushNotificationController = require("./pushNotificationController")
+
 
 
 async function placeOrder(req, res) {
@@ -14,6 +18,11 @@ async function placeOrder(req, res) {
     try {
         await newOrder.save();
         const orderId = newOrder._id
+        const riders = User.find({userType: "Rider"})
+        const riderTokens = riders.map(rider => rider.fcm).filter(token => token);
+        if (riderTokens.length > 0) {
+            // await pushNotificationController.sendPushNotification(riderTokens, );
+        }
         res.status(201).json({ status: true, message: "Order placed successfully", orderId: orderId });
         console.log(orderId)
     } catch (error) {
@@ -69,24 +78,70 @@ async function getOrdersByRestaurantId(req, res) {
 
 
 
-async function updateOrderStatus(req, res) {
-    const { orderId, orderStatus } = req.params; // Access orderStatus from params
+// async function updateOrderStatus(req, res) {
+//     const { orderId, orderStatus } = req.params; // Access orderStatus from params
 
-    // Optional: You can validate orderStatus if you want to restrict it to certain values
-    if (!orderStatus) {
-        return res.status(400).json({ status: false, message: "Order status is required" });
-    }
+//     // Optional: You can validate orderStatus if you want to restrict it to certain values
+//     if (!orderStatus) {
+//         return res.status(400).json({ status: false, message: "Order status is required" });
+//     }
+
+//     try {
+//         const order = await Order.findByIdAndUpdate(orderId, { orderStatus }, { new: true });
+
+//         if (!order) {
+//             return res.status(404).json({ status: false, message: "Order not found" });
+//         }
+
+//         res.status(201).json({ status: true, message: "Order status updated successfully", order });
+//     } catch (error) {
+//         console.error("Update order status error:", error);
+//         res.status(500).json({ status: false, message: error.message });
+//     }
+// }
+
+
+async function updateOrderStatus(req, res) { 
+    const { orderId } = req.params;
+    const { status } = req.body;
 
     try {
-        const order = await Order.findByIdAndUpdate(orderId, { orderStatus }, { new: true });
+        // Validate the order status
+        const validStatuses = ["Placed", "Accepted", "Preparing", "Manual", "Cancelled", "Delivered", "Ready", "Out_For_Delivery"];
+        if (!validStatuses.includes(status)) {
+            return res.status(400).json({ status: false, message: "Invalid order status" });
+        }
 
-        if (!order) {
+        // Find and update the order
+        const order = await Order.findByIdAndUpdate(orderId, { orderStatus: status }, { new: true });
+
+        if (!order) { 
             return res.status(404).json({ status: false, message: "Order not found" });
         }
 
-        res.status(201).json({ status: true, message: "Order status updated successfully", order });
+        // Custom message for each status
+        const statusMessages = {
+            "Placed": { title: "Order Placed", body: "Your order has been placed successfully!" },
+            "Accepted": { title: "Order Accepted", body: "Your order has been accepted by the restaurant!" },
+            "Preparing": { title: "Order Preparing", body: "Your order is being prepared by the kitchen!" },
+            "Manual": { title: "Order Update", body: "Your order status has been manually updated!" },
+            "Cancelled": { title: "Order Cancelled", body: "Your order has been cancelled." },
+            "Delivered": { title: "Order Delivered", body: "Your order has been delivered. Enjoy your meal!" },
+            "Ready": { title: "Order Ready", body: "Your order is ready for pickup!" },
+            "Out_For_Delivery": { title: "Out for Delivery", body: "Your order is on its way to you!" }
+        };
+
+        const { title, body } = statusMessages[status] || { title: "Order Update", body: `Your order is now ${status}` };
+
+        // Send push notification if an FCM token is available
+        if (order.fcm) {
+            await pushNotificationController.sendPushNotification(order.fcm, title, body, order);
+        }
+
+        res.status(200).json({ status: true, message: "Order status updated successfully", order });
+
     } catch (error) {
-        console.error("Update order status error:", error);
+        console.error("❌ Error updating order status:", error);
         res.status(500).json({ status: false, message: error.message });
     }
 }

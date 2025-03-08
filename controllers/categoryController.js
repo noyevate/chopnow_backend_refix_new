@@ -1,5 +1,6 @@
 const Category = require("../models/Category");
 const mongoose = require('mongoose');
+const Rider = require("../models/Rider");
 
 async function createCategory(req, res) {
     const newCategory = new Category(req.body)
@@ -38,4 +39,30 @@ async function getRandomCategories(req, res) {
     }
 }
 
-module.exports = { createCategory, getAllCategories, getRandomCategories };
+async function updateCategoryImage(req, res) {
+    const { categoryId } = req.params;
+    let { imageUrl } = req.body;
+
+    try {
+        const category = await Category.findById(categoryId);
+        if (!category) {
+            return res.status(404).json({ status: false, message: "Category not found" });
+        }
+
+
+        category.imageUrl = imageUrl;
+        await category.save();
+
+        res.status(200).json({
+            status: true,
+            message: "User image updated successfully",
+            imageUrl: category.imageUrl // Return a properly formatted URL
+        });
+
+    } catch (error) {
+
+    }
+       
+}
+
+module.exports = { createCategory, getAllCategories, getRandomCategories, updateCategoryImage };
