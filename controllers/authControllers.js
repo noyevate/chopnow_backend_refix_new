@@ -18,7 +18,7 @@ const validateEmail = async (email) => {
   }
 
   const existingUser = await User.findOne({ email });
-  if (existingUser) {
+  if (existingUser.userType == "Client") {
     return { status: false, message: 'Email already exists. Login to continue' };
   }
 
@@ -103,7 +103,7 @@ async function createAccount(req, res) {
     const formattedPhone = phone.startsWith('+234') ? phone : '+234' + phone.replace(/^0/, '');
 
     const existingUser = await User.findOne({ phone: formattedPhone });
-    if (existingUser.userType == "Client") {
+    if (existingUser) {
       return res.json({ status: false, message: 'Phone number already exists. Login to continue' });
     }
 
@@ -125,7 +125,17 @@ async function createAccount(req, res) {
 
     // Send OTP
 
-    await sendEmail(user.email, otp);
+    try {
+      // Send OTP
+      await sendEmail(user.email, otp);
+    } catch (emailError) {
+      console.log("Email verification failed: ", emailError);
+
+      // Delete the created user if email sending fails
+      await User.deleteOne({ _id: user._id });
+
+      return res.status(500).json({ status: false, message: "Failed to send verification email. Please try again later." });
+    }
 
     res.status(201).json({
       status: true,
