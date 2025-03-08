@@ -118,7 +118,7 @@ async function createAccount(req, res) {
       email,
       otp: otp,
       otpExpires: Date.now() + 10 * 60 * 1000,
-      fcm // OTP valid for 10 minutes
+      fcm 
     });
 
     await user.save();
