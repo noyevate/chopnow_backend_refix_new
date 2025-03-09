@@ -5,12 +5,14 @@ const { verifyTokenAndAuthorization } = require('../middlewares/verifyToken');
 
 router.post("/", riderController.createRider);
 router.get("/search", riderController.searchRestaurant);
-router.put('/assign-rider/:orderId/:riderId', riderController.assignRiderToOrder);
-router.put('/reject-order/:orderId/:riderId', riderController.rejectOrder);
+router.get("/:riderId", riderController.getRiderById);
+router.get("/user/:userId", riderController.getRiderUserById);
+router.put('/assign-rider/:orderId/:userId', riderController.assignRiderToOrder);
+router.put('/reject-order/:orderId/:userId', riderController.rejectOrder);
 router.get('/current-trip/:driverId', riderController.currentTrip);
 router.get('/completed-trips/:driverId', riderController.completedTrips);
-router.get("/fetch-order/by/:orderStatus/:paymentStatus/:riderId", riderController.getAllOrdersByOrderStatus);
-router.get("/restaurant_orders/:restaurantId/:orderStatus/:paymentStatus/:riderId", riderController.getOrdersByOnlyRestaurantId);
+router.get("/fetch-order/by/:orderStatus/:paymentStatus/:userId", riderController.getAllOrdersByOrderStatus);
+router.get("/restaurant_orders/:restaurantId/:orderStatus/:paymentStatus/:userId", riderController.getOrdersByOnlyRestaurantId);
 router.get('/orders/delivered/:driverId', riderController.getDeliveredOrdersByRider);
 router.patch('/update-user-image/:riderId/userImageUrl', riderController.updateUserImageUrl);
 router.patch('/update-driver-license-image/:riderId/driverLicenseImageUrl', riderController.updateDriverLicenseImageUrl);

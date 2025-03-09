@@ -68,10 +68,10 @@ async function searchRestaurant(req, res) {
 
 async function assignRiderToOrder(req, res) {
     try {
-        const { orderId, riderId } = req.params;
+        const { orderId, userId } = req.params;
 
-        if (!orderId || !riderId) {
-            return res.status(400).json({ status: false, message: "Order ID and Rider ID are required." });
+        if (!orderId || !userId) {
+            return res.status(400).json({ status: false, message: "Order ID and User ID are required." });
         }
 
         const order = await Order.findById(orderId);
@@ -83,7 +83,7 @@ async function assignRiderToOrder(req, res) {
         }
         
 
-        order.driverId = riderId;
+        order.driverId = userId;
         order.riderAssigned = true
         order.riderStatus = "RA"
         await order.save();
@@ -104,9 +104,9 @@ async function assignRiderToOrder(req, res) {
 
 async function rejectOrder(req, res) {
     try {
-        const { orderId, riderId } = req.params;
+        const { orderId, userId } = req.params;
 
-        if (!orderId || !riderId) {
+        if (!orderId || !usrId) {
             return res.status(400).json({ status: false, message: "Order ID and Rider ID are required." });
         }
 
@@ -114,13 +114,13 @@ async function rejectOrder(req, res) {
         if (!order) {
             return res.status(404).json({ status: false, message: "Order not found." });
         }
-        if (order.driverId == riderId) {
+        if (order.driverId == userId) {
             return res.status(400).json({ status: false, message: "you've already been assigned to this order" });
         }
 
         // Ensure rider is not added multiple times
-        if (!order.rejectedBy.includes(riderId)) {
-            order.rejectedBy.push(riderId);
+        if (!order.rejectedBy.includes(userId)) {
+            order.rejectedBy.push(userId);
             await order.save();
         }
 
@@ -179,7 +179,7 @@ async function completedTrips(req, res) {
 };
 
 async function getAllOrdersByOrderStatus(req, res) {
-    const { orderStatus, paymentStatus, riderId } = req.params;
+    const { orderStatus, paymentStatus, userId } = req.params;
 
     try {
         const orders = await Order.find({
@@ -187,7 +187,7 @@ async function getAllOrdersByOrderStatus(req, res) {
             paymentStatus: paymentStatus,
             riderAssigned: false,
             driverId: "",
-            rejectedBy: { $nin: [riderId] }
+            rejectedBy: { $nin: [userId] }
         }).populate({
             path: 'orderItems.foodId',
             select: "imageUrl title rating time"
@@ -202,7 +202,7 @@ async function getAllOrdersByOrderStatus(req, res) {
 
 async function getOrdersByOnlyRestaurantId(req, res) {
 
-    const { restaurantId, orderStatus, paymentStatus, riderId } = req.params;
+    const { restaurantId, orderStatus, paymentStatus, userId } = req.params;
 
     // Validate the required parameters
     if (!restaurantId || !orderStatus || !paymentStatus) {
@@ -216,7 +216,7 @@ async function getOrdersByOnlyRestaurantId(req, res) {
             paymentStatus: paymentStatus,
             driverId: "",
             riderAssigned: false,
-            riderId: { $nin: [riderId] }
+            riderId: { $nin: [userId] }
 
         }).populate({
             path: 'orderItems.foodId',
@@ -357,6 +357,38 @@ async function updateVehicleImgUrl(req, res) {
     }
 }
 
+async function getRiderById(req, res) {
+    const {riderId} = req.params;
+    
+    try {
+
+        const rider = await Rider.findById(riderId)
+        if (!rider) {
+            return res.status(404).json({status: false, message: "Rider not found"})
+        }
+        return res.status(200).json(rider)
+    } catch (error) {
+        res.status(500).json({status: false, message: "Failed to fetch rider"})
+    }
+}
+
+async function getRiderUserById(req, res) {
+    const {userId} = req.params;
+    
+    try {
+
+        const user = await User.findById(userId)
+        if (!user) {
+            return res.status(404).json({status: false, message: "Rider not found"})
+        }
+        if(user.userType != "Rider") {
+            return res.status(404).json({status: false, message: "Rider not found"})
+        }
+        return res.status(200).json(user)
+    } catch (error) {
+        res.status(500).json({status: false, message: "Failed to fetch rider"})
+    }
+}
 
 
 
@@ -364,5 +396,6 @@ async function updateVehicleImgUrl(req, res) {
 module.exports = {
     createRider, searchRestaurant, assignRiderToOrder, rejectOrder, currentTrip, completedTrips,
     getAllOrdersByOrderStatus, getOrdersByOnlyRestaurantId, getDeliveredOrdersByRider,
-    updateUserImageUrl, updateDriverLicenseImageUrl, updateParticularsImageUrl, updateVehicleImgUrl
+    updateUserImageUrl, updateDriverLicenseImageUrl, updateParticularsImageUrl, updateVehicleImgUrl,
+    getRiderById, getRiderUserById
 }
