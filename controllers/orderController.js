@@ -22,6 +22,7 @@ async function placeOrder(req, res) {
         const riderTokens = riders.map(rider => rider.fcm).filter(token => token);
         if (riderTokens.length > 0) {
             // await pushNotificationController.sendPushNotification(riderTokens, );
+            await pushNotificationController.sendPushNotification(newOrder.customerFcm, "Order created", "Your Order as been placed", newOrder);
         }
         res.status(201).json({ status: true, message: "Order placed successfully", orderId: orderId });
         console.log(orderId)
