@@ -9,10 +9,10 @@ router.get("/user-order-history", verifyTokenAndAuthorization,  orderController.
 
 router.get("/status-and-payment", verifyTokenAndAuthorization,  orderController.getOrdersByStatusAndPayment);
 
-router.get("/:restaurantId/:orderStatus/:paymentStatus", orderController.getOrdersByRestaurantId);
+router.get("/:restaurantId/:orderStatus/:paymentStatus", verifyTokenAndAuthorization, orderController.getOrdersByRestaurantId);
 
 
-router.get("/:restaurantId", orderController.getAllOrdersByRestaurantId);
+router.get("/:restaurantId",  orderController.getAllOrdersByRestaurantId);
 
 router.get("/get-all-order/by/:orderStatus/:paymentStatus", orderController.getAllOrdersByOrderStatus);
 
