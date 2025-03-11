@@ -2,6 +2,7 @@
 const User = require('../models/User');
 const Rider = require("../models/Rider");
 const Restaurant = require("../models/Restaurant");
+const Price = require("../models/Price")
 
 const { generateOTP, hashPIN } = require('../utils/generate_otp');
 const { sendOTP } = require('../utils/send_otp');
@@ -122,6 +123,8 @@ async function createAccount(req, res) {
     });
 
     await user.save();
+     // Try fetching the rider details (but don't stop execution if it fails)
+     let price = await Price.findOne();
 
     // Send OTP
 
@@ -146,7 +149,8 @@ async function createAccount(req, res) {
         last_name: user.last_name,
         phone: user.phone,
         email: user.email
-      }
+      },
+      price: price.basePrice || null
     });
 
   } catch (error) {
@@ -344,9 +348,10 @@ async function login(req, res) {
 
     // Generate JWT token
     const token = jwt.sign({ id: user._id, userType: user.userType, phone: user.phone }, process.env.JWT_SECRET, { expiresIn: '5h' });
+    let price = await Price.findOne();
 
     const { password, otp, createdAt, updatedAt, ...others } = user._doc;
-    res.status(200).json({ ...others, token });
+    res.status(200).json({ ...others, token, price: price.basePrice || null });
   } catch (error) {
     console.error('Error in login:', error);
     res.status(500).json({ message: 'Server error', error });
