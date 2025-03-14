@@ -6,7 +6,7 @@ async function sendPushNotificationToRider(fcmTokens, title, body, order) {
         const message = {
             token: fcmTokens,
             notification: { title, body },
-            data: { orderId: orderId }
+            data: { order: JSON.stringify(order) }
         };
 
         await admin.messaging().send(message);
@@ -21,7 +21,7 @@ async function sendPushNotificationToRestaurant(fcmTokens, title, body, order) {
         const message = {
             token: fcmTokens,
             notification: { title, body },
-            data: { orderId: orderId }
+            data: { order: JSON.stringify(order) }
         };
 
         await admin.messaging().send(message);

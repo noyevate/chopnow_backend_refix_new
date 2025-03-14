@@ -26,8 +26,6 @@ const validateEmail = async (email) => {
   return { status: true, message: 'Email is available' };
 }
 
-
-
 async function validatePhone(req, res) {
   const phone = req.params.phone
   const phoneRegex = /^(?:0)?[789]\d{9}$/;
@@ -225,32 +223,25 @@ async function createRestaurantAccount(req, res) {
 
 async function createRiderAccount(req, res) {
   const { first_name, last_name, phone, email, password, fcm } = req.body;
-
   try {
     // Validate email
-    const emailValidation = await validateEmail(email);
-    if (!emailValidation.status) {
-      return res.status(400).json(emailValidation);
-    }
-
+    // const emailValidation = await validateEmail2(email);
+    // if (!emailValidation.status) {
+    //   return res.status(400).json(emailValidation);
+    // }
     // Validate phone
     const phoneRegex = /^(?:0)?[789]\d{9}$/;
     if (!phoneRegex.test(phone)) {
       return res.json({ status: false, message: 'Phone number Invalid.' });
     }
-
     // Prepend "+234" to the phone number if it doesn't already start with it
     const formattedPhone = phone.startsWith('+234') ? phone : '+234' + phone.replace(/^0/, '');
     const nwePassword = await hashPIN(password);
-
     const existingUser = await User.findOne({ email: email });
-    if (existingUser) {
+    if (existingUser == "Rider") {
       return res.json({ status: false, message: 'Email already exists. Login to continue' });
     }
-
-    // Generate OTP
     const otp = generateOTP();
-
     // Create new user
     const user = new User({
       first_name,
@@ -263,14 +254,9 @@ async function createRiderAccount(req, res) {
       otpExpires: Date.now() + 10 * 60 * 1000, // OTP valid for 10 minutes
       fcm
     });
-
-
     await user.save();
-
     // Send OTP
-
     await sendEmail(user.email, otp);
-
     res.status(201).json({
       status: true,
       message: 'Account created. Verify your email.',
@@ -388,8 +374,6 @@ async function loginVendor(req, res) {
   if (!emailRegex.test(req.body.email)) {
     return res.status(404).json({ status: false, message: "Email not valid" });
   }
-
-
   try {
     const user = await User.findOne({ email: req.body.email });
     if (!user) {
