@@ -465,7 +465,7 @@ async function loginRider(req, res) {
       { expiresIn: "50d" }
     );
 
-    const { password, otp, createdAt, updatedAt, ...others } = user._doc;
+    const { password, otp, createdAt, updatedAt, otpExpires, ...others } = user._doc;
 
     res.status(200).json({ 
       ...others, 
