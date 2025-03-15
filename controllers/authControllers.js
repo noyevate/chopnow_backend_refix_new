@@ -238,7 +238,7 @@ async function createRiderAccount(req, res) {
     const formattedPhone = phone.startsWith('+234') ? phone : '+234' + phone.replace(/^0/, '');
     const nwePassword = await hashPIN(password);
     const existingUser = await User.findOne({ email: email });
-    if (existingUser == "Rider") {
+    if (existingUser == "Rider" || "Vendor") {
       return res.json({ status: false, message: 'Email already exists. Login to continue' });
     }
     const otp = generateOTP();
@@ -465,7 +465,7 @@ async function loginRider(req, res) {
       { expiresIn: "50d" }
     );
 
-    const { password, otp, createdAt, updatedAt, OTP_expires, ...others } = user._doc;
+    const { password, otp, createdAt, updatedAt, ...others } = user._doc;
 
     res.status(200).json({ 
       ...others, 

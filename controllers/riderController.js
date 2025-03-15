@@ -7,7 +7,7 @@ const pushNotificationController = require("./pushNotificationController")
 
 
 async function createRider(req, res) {
-    const { userId, vehicleImgUrl, vehicleType, vehicleBrand, plateNumber, guarantors, bankName, bankAccount, bankAccountName, coords } = req.body;
+    const { userId, vehicleImgUrl, vehicleType, vehicleBrand, plateNumber, guarantors, bankName, bankAccount, bankAccountName, coords, fcm } = req.body;
 
     try {
 
@@ -68,7 +68,7 @@ async function searchRestaurant(req, res) {
 
 async function assignRiderToOrder(req, res) {
     try {
-        const { orderId, userId } = req.params;
+        const { orderId, userId, riderFcm } = req.params;
 
         if (!orderId || !userId) {
             return res.status(400).json({ status: false, message: "Order ID and User ID are required." });
@@ -86,6 +86,7 @@ async function assignRiderToOrder(req, res) {
         order.driverId = userId;
         order.riderAssigned = true
         order.riderStatus = "RA"
+        order.riderFcm = riderFcm
         await order.save();
 
         try {

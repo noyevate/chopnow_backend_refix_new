@@ -4,6 +4,7 @@ const RiderSchema = new mongoose.Schema({
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'Rider', required: true },
     vehicleImgUrl: { type: String, required: true },
     vehicleType: { type: String, required: true },
+    fcm: {type: String, default: ""},
     vehicleBrand: { type: String, required: true },
     plateNumber: { type: String, required: true },
     guarantors: { type: Array, default: [] },

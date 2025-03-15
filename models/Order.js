@@ -21,6 +21,7 @@ const OrderSchema = new mongoose.Schema({
     deliveryFee: {type: Number, required:true},
     customerFcm: {type: String, default: ''},
     restaurantFcm: {type: String, default: ''},
+    riderFcm: {type: String, default: ''},
     grandTotal: {type: Number, required:true},
     deliveryAddress: {
         type: mongoose.Schema.Types.ObjectId, ref: 'Address', required: true
