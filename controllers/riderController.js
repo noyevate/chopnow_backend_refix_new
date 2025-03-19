@@ -24,6 +24,7 @@ async function createRider(req, res) {
         await newCreateRider.save();
 
         // Fetch user details based on userId
+        await pushNotificationController.sendPushNotification(fcm, "Rider", `Your journey starts now! Ready to drive, earn, and make a difference? Let’s go! `, "")
         const user = await User.findById(userId).select("first_name last_name"); // Select only required fields
         res.status(201).json({
             status: true, message: "Rider added Successfully", newCreateRider: {
