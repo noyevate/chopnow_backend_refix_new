@@ -14,10 +14,12 @@ router.get('/completed-trips/:driverId', riderController.completedTrips);
 router.get("/fetch-order/by/:orderStatus/:paymentStatus/:userId", riderController.getAllOrdersByOrderStatus);
 router.get("/restaurant_orders/:restaurantId/:orderStatus/:paymentStatus/:userId", riderController.getOrdersByOnlyRestaurantId);
 router.get('/orders/delivered/:driverId', riderController.getDeliveredOrdersByRider);
+
 router.patch('/update-user-image/:riderId/userImageUrl', riderController.updateUserImageUrl);
 router.patch('/update-driver-license-image/:riderId/driverLicenseImageUrl', riderController.updateDriverLicenseImageUrl);
 router.patch('/update-particulars-image/:riderId/particularsImageUrl', riderController.updateParticularsImageUrl);
 router.patch('/update-vehicle-image/:riderId/vehicleImgUrl', riderController.updateVehicleImgUrl);
+
 router.put('/assign-rider/:orderId/:userId/:fcm', riderController.assignRiderToOrder);
 router.patch('/update-riderStatus/:orderId/:riderStatus/:fcm', riderController.rejectOrder);
 

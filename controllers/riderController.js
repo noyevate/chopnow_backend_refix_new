@@ -93,9 +93,11 @@ async function assignRiderToOrder(req, res) {
             if (order.customerFcm) {
                 await pushNotificationController.sendPushNotification(order.customerFcm, "Rider Assigned", "A rider as being assinged to your order", order);
             }
+             
         } catch (e) {
             console.log(`error ${e}`)
         }
+        await pushNotificationController.sendPushNotification(riderFcm, "Rider Assigned", "you've been assigned to this order", order);
 
         res.status(200).json({ status: true, message: "Rider assigned successfully.", data: order });
     } catch (error) {
