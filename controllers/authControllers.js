@@ -222,7 +222,7 @@ async function createRestaurantAccount(req, res) {
 }
 
 async function createRiderAccount(req, res) {
-  const { first_name, last_name, phone, email, password, fcm } = req.body;
+  const { first_name, last_name, phone, email, password} = req.body;
   try {
     // Validate email
     // const emailValidation = await validateEmail2(email);
@@ -238,7 +238,7 @@ async function createRiderAccount(req, res) {
     const formattedPhone = phone.startsWith('+234') ? phone : '+234' + phone.replace(/^0/, '');
     const nwePassword = await hashPIN(password);
     const existingUser = await User.findOne({ email: email });
-    if (existingUser == "Rider" || "Vendor") {
+    if (existingUser.userType == "Rider" || "Vendor") {
       return res.json({ status: false, message: 'Email already exists. Login to continue' });
     }
     const otp = generateOTP();
