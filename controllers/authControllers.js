@@ -161,10 +161,10 @@ async function createRestaurantAccount(req, res) {
 
   try {
     // Validate email
-    const emailValidation = await validateEmail(email);
-    if (!emailValidation.status) {
-      return res.status(400).json(emailValidation);
-    }
+    // const emailValidation = await validateEmail(email);
+    // if (!emailValidation.status) {
+    //   return res.status(400).json(emailValidation);
+    // }
 
     // Validate phone
     const phoneRegex = /^(?:0)?[789]\d{9}$/;
@@ -222,7 +222,7 @@ async function createRestaurantAccount(req, res) {
 }
 
 async function createRiderAccount(req, res) {
-  const { first_name, last_name, phone, email, password, fcm } = req.body;
+  const { first_name, last_name, phone, email, password } = req.body;
   try {
     // Validate email
     // const emailValidation = await validateEmail2(email);

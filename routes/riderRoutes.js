@@ -7,7 +7,7 @@ router.post("/", riderController.createRider);
 router.get("/search", riderController.searchRestaurant);
 router.get("/:riderId", riderController.getRiderById);
 router.get("/user/:userId", riderController.getRiderUserById);
-router.put('/assign-rider/:orderId/:userId', riderController.assignRiderToOrder);
+
 router.put('/reject-order/:orderId/:userId', riderController.rejectOrder);
 router.get('/current-trip/:driverId', riderController.currentTrip);
 router.get('/completed-trips/:driverId', riderController.completedTrips);
@@ -18,7 +18,10 @@ router.patch('/update-user-image/:riderId/userImageUrl', riderController.updateU
 router.patch('/update-driver-license-image/:riderId/driverLicenseImageUrl', riderController.updateDriverLicenseImageUrl);
 router.patch('/update-particulars-image/:riderId/particularsImageUrl', riderController.updateParticularsImageUrl);
 router.patch('/update-vehicle-image/:riderId/vehicleImgUrl', riderController.updateVehicleImgUrl);
+router.put('/assign-rider/:orderId/:userId/:fcm', riderController.assignRiderToOrder);
+router.patch('/update-riderStatus/:orderId/:riderStatus/:fcm', riderController.rejectOrder);
 
 
 
 module.exports = router;
+

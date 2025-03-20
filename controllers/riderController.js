@@ -83,7 +83,6 @@ async function assignRiderToOrder(req, res) {
             return res.status(404).json({ status: false, message: "Order as already been assigned." });
         }
         
-
         order.driverId = userId;
         order.riderAssigned = true
         order.riderStatus = "RA"
@@ -392,6 +391,53 @@ async function getRiderUserById(req, res) {
     }
 }
 
+async function updateRiderStatus(req, res) { 
+    const { orderId, riderStatus, fcm } = req.params;
+    try {
+        // Validate the order status
+        const validStatuses = ["NRA", "RA", "AR", "TDP", "ADP" ,"OD"];
+        if (!validStatuses.includes(riderStatus)) {
+            return res.status(400).json({ status: false, message: "Invalid order status" });
+        }
+
+        // Find and update the order
+        const order = await Order.findById(orderId);
+
+        if (!order) { 
+            return res.status(404).json({ status: false, message: "Order not found" });
+        }
+        order.riderStatus = riderStatus
+        order.riderFcm = fcm
+
+        // Custom message for each status
+        const statusMessages = {
+            "NRA": { title: "Rider Update", body: "No rider assigned!" },
+            "RA": { title: "Rider Update", body: "A rider as been assigned to your order!" },
+            "AR": { title: "Rider Update", body: "Rider at the restaurant!" },
+            "TDP": { title: "Rider Update", body: "Rider is moving to the delivery point!" },
+            "ADP": { title: "Rider Update", body: "Rider at the delivery point!" },
+            "OA": { title: "Rider Update", body: "Order Delivered" },
+        };
+
+        const { title, body } = statusMessages[riderStatus] || { title: "Order Update", body: `Your order is now ${riderStatus}` };
+
+        // Send push notification if an FCM token is available
+        try {
+            if (order.customerFcm) {
+                await pushNotificationController.sendPushNotification(order.customerFcm, title, body, order);
+            }
+        } catch(e) {
+            console.log(`error ${e}`)
+        }
+
+        res.status(200).json({ status: true, message: "Order status updated successfully", order });
+
+    } catch (error) {
+        console.error("Error updating order status:", error);
+        res.status(500).json({ status: false, message: error.message });
+    }
+}
+
 
 
 
@@ -399,5 +445,5 @@ module.exports = {
     createRider, searchRestaurant, assignRiderToOrder, rejectOrder, currentTrip, completedTrips,
     getAllOrdersByOrderStatus, getOrdersByOnlyRestaurantId, getDeliveredOrdersByRider,
     updateUserImageUrl, updateDriverLicenseImageUrl, updateParticularsImageUrl, updateVehicleImgUrl,
-    getRiderById, getRiderUserById
+    getRiderById, getRiderUserById, updateRiderStatus
 }
