@@ -222,7 +222,7 @@ async function createRestaurantAccount(req, res) {
 }
 
 async function createRiderAccount(req, res) {
-  const { first_name, last_name, phone, email, password} = req.body;
+  const { first_name, last_name, phone, email, password, fcm } = req.body;
   try {
     // Validate email
     // const emailValidation = await validateEmail2(email);
