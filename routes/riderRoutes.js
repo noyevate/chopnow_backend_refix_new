@@ -20,8 +20,9 @@ router.patch('/update-driver-license-image/:riderId/driverLicenseImageUrl', ride
 router.patch('/update-particulars-image/:riderId/particularsImageUrl', riderController.updateParticularsImageUrl);
 router.patch('/update-vehicle-image/:riderId/vehicleImgUrl', riderController.updateVehicleImgUrl);
 
-router.put('/assign-rider/:orderId/:userId/:fcm', riderController.assignRiderToOrder);
-router.patch('/update-riderStatus/:orderId/:riderStatus/:fcm', riderController.rejectOrder);
+router.put('/assign-rider/:orderId/:userId/:riderFcm', riderController.assignRiderToOrder);
+
+router.patch('/update-riderStatus/:orderId/:riderStatus/:riderFcm', riderController.rejectOrder);
 
 
 

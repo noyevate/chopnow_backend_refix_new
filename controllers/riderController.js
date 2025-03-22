@@ -89,8 +89,11 @@ async function assignRiderToOrder(req, res) {
         order.riderFcm = riderFcm
         await order.save();
 
+        console.log(order.customerFcm)
+        console.log(riderFcm)
         try {
             if (order.customerFcm) {
+                
                 await pushNotificationController.sendPushNotification(order.customerFcm, "Rider Assigned", "A rider as being assinged to your order", order);
             }
              
