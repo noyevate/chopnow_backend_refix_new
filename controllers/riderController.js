@@ -110,7 +110,7 @@ async function assignRiderToOrder(req, res) {
 
 async function rejectOrder(req, res) {
     try {
-        const { orderId, userId } = req.params;
+        const { orderId, userId, fcm } = req.params;
 
         if (!orderId || !usrId) {
             return res.status(400).json({ status: false, message: "Order ID and Rider ID are required." });
@@ -128,6 +128,7 @@ async function rejectOrder(req, res) {
         if (!order.rejectedBy.includes(userId)) {
             order.rejectedBy.push(userId);
             await order.save();
+            await pushNotificationController.sendPushNotification(riderFcm, "Order Rejected", "you've rejected this order", order);
         }
 
         res.status(200).json({ status: true, message: "Order rejected successfully.", data: order });
@@ -397,7 +398,7 @@ async function getRiderUserById(req, res) {
 }
 
 async function updateRiderStatus(req, res) { 
-    const { orderId, riderStatus, fcm } = req.params;
+    const { orderId, riderStatus, riderFcm } = req.params;
     try {
         // Validate the order status
         const validStatuses = ["NRA", "RA", "AR", "TDP", "ADP" ,"OD"];
@@ -406,23 +407,22 @@ async function updateRiderStatus(req, res) {
         }
 
         // Find and update the order
-        const order = await Order.findById(orderId);
-
+        const order = await Order.findByIdAndUpdate(orderId, { riderStatus: riderStatus,  }, { new: true });
+        
         if (!order) { 
             return res.status(404).json({ status: false, message: "Order not found" });
         }
-        order.riderStatus = riderStatus
-        order.riderFcm = fcm
 
         // Custom message for each status
         const statusMessages = {
-            "NRA": { title: "Rider Update", body: "No rider assigned!" },
-            "RA": { title: "Rider Update", body: "A rider as been assigned to your order!" },
-            "AR": { title: "Rider Update", body: "Rider at the restaurant!" },
-            "TDP": { title: "Rider Update", body: "Rider is moving to the delivery point!" },
-            "ADP": { title: "Rider Update", body: "Rider at the delivery point!" },
-            "OA": { title: "Rider Update", body: "Order Delivered" },
+            "NRA": { title: "🚴‍♂️ Rider Update", body: "No rider assigned yet! Hang tight ⏳" },
+            "RA": { title: "🚴‍♂️ Rider Update", body: "Woohoo! 🎉 A rider has been assigned to your order!" },
+            "AR": { title: "🚴‍♂️ Rider Update", body: "Your rider has arrived at the restaurant! 🍽️" },
+            "TDP": { title: "🚴‍♂️ Rider Update", body: "On the way! 🛵 Your order is heading to you! 📍" },
+            "ADP": { title: "🚴‍♂️ Rider Update", body: "Your rider is at your location! 🚪 Open up! 🙌" },
+            "OA": { title: "🎉 Order Delivered!", body: "Enjoy your meal! 😋🍽️" },
         };
+        
 
         const { title, body } = statusMessages[riderStatus] || { title: "Order Update", body: `Your order is now ${riderStatus}` };
 
@@ -434,6 +434,8 @@ async function updateRiderStatus(req, res) {
         } catch(e) {
             console.log(`error ${e}`)
         }
+        console.log(riderFcm)
+        await pushNotificationController.sendPushNotification(riderFcm, title, body, order);
 
         res.status(200).json({ status: true, message: "Order status updated successfully", order });
 

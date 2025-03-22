@@ -22,7 +22,7 @@ router.patch('/update-vehicle-image/:riderId/vehicleImgUrl', riderController.upd
 
 router.put('/assign-rider/:orderId/:userId/:riderFcm', riderController.assignRiderToOrder);
 
-router.patch('/update-riderStatus/:orderId/:riderStatus/:riderFcm', riderController.rejectOrder);
+router.patch('/update-riderStatus/:orderId/:riderStatus/:riderFcm', riderController.updateRiderStatus);
 
 
 
