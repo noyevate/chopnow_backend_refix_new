@@ -2,10 +2,10 @@ const router = require('express').Router();
 const riderRatingController = require('../controllers/riderRatingController');
 const {verifyTokenAndAuthorization} = require('../middlewares/verifyToken')
 
-router.post("/",  riderRatingController.rateRider);
-router.delete("/",  riderRatingController.deleteRiderRating);
-router.get('/ratings/:riderId', riderRatingController.getRatingsByRider);
-router.get('/rating/:orderId/:riderId', riderRatingController.fetchRatingByOrderId);
+router.post("/rider-rating/:customerRating",  riderRatingController.rateRider);
+router.delete("/rider-rating",  riderRatingController.deleteRiderRating);
+router.get('/rider-rating/:riderId', riderRatingController.getRatingsByRider);
+router.get('/rider-rating/:orderId/:riderId', riderRatingController.fetchRatingByOrderId);
 
 
 

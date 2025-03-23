@@ -18,7 +18,7 @@ const RiderSchema = new mongoose.Schema({
     userImageUrl: { type: String, required: true },
     particularsImageUrl:{ type: String, required: false, default:"" },
     driverLicenseImageUrl:{ type: String, required: false, default:""},
-    rating: { type: Number, min: 1.0, max: 5.0, default: 3.1 },
+    rating: { type: Number, min: 1.0, max: 5.0, default: 3.0 },
     ratingCount: { type: Number, default: 267 },
     verification: { type: String, default: "Pending", enum: ["Pending", "Verified", "Rejected"] },
     verificationMessage: { type: String, default: "Your restaurant is under review, we will notify you once it is verified" },
