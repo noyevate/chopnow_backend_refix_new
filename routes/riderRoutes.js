@@ -7,6 +7,7 @@ router.post("/", riderController.createRider);
 router.get("/search", riderController.searchRestaurant);
 router.get("/:riderId", riderController.getRiderById);
 router.get("/user/:userId", riderController.getRiderUserById);
+router.get("/rider_details/:userId", riderController.getRiderByUserId);
 
 router.put('/reject-order/:orderId/:userId', riderController.rejectOrder);
 router.get('/current-trip/:driverId', riderController.currentTrip);

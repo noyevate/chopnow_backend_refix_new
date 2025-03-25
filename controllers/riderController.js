@@ -446,11 +446,27 @@ async function updateRiderStatus(req, res) {
 }
 
 
+async function getRiderByUserId(req, res) {
+    const {userId} = req.params;
+    
+    try {
+
+        const rider = await Rider.findOne({userId})
+        if (!rider) {
+            return res.status(404).json({status: false, message: "Rider not found"})
+        }
+        return res.status(200).json(rider)
+    } catch (error) {
+        res.status(500).json({status: false, message: "Failed to fetch rider"})
+    }
+}
+
+
 
 
 module.exports = {
     createRider, searchRestaurant, assignRiderToOrder, rejectOrder, currentTrip, completedTrips,
     getAllOrdersByOrderStatus, getOrdersByOnlyRestaurantId, getDeliveredOrdersByRider,
     updateUserImageUrl, updateDriverLicenseImageUrl, updateParticularsImageUrl, updateVehicleImgUrl,
-    getRiderById, getRiderUserById, updateRiderStatus
+    getRiderById, getRiderUserById, updateRiderStatus, getRiderByUserId
 }
