@@ -39,6 +39,8 @@ const OrderSchema = new mongoose.Schema({
     driverId: {type: String, default: ''},
     rejectedBy: [{ type: String }],
     rating: {type: Number, min: 1, max: 5, default: 3},
+    restaurantRating: {type: Boolean, default: false},
+    riderRating: {type: Boolean, default: false},
     feedback: {type: String}, 
     PromoCode:{type: String},
     customerName:{type: String, default: ''},

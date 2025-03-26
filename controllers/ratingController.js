@@ -1,10 +1,10 @@
 const Rating = require("../models/Rating");
 const Restaurant = require("../models/Restaurant");
-const Food = require("../models/Food");
+const Order = require("../models/Order");
 
 
 async function addRating (req, res) {
-    const { restaurantId, userId, rating, comment, name } = req.body;
+    const { restaurantId, userId, rating, comment, name, orderId } = req.body;
 
     try {
         const newRating = new Rating({
@@ -23,6 +23,8 @@ async function addRating (req, res) {
         const avgRating = (totalRating / ratings.length).toFixed(1);
 
         await Restaurant.findByIdAndUpdate(restaurantId, { rating: avgRating, ratingCount: ratings.length });
+        await Order.findByIdAndUpdate(orderId, {restaurantRating: true})
+        
 
         res.status(201).send(newRating);
     } catch (err) {
