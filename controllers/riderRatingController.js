@@ -11,8 +11,6 @@ async function rateRider(req, res) {
 
         const existingRating = await Rating.findOne({ orderId });
         const order = await Order.findById(orderId)
-        console.log(order)
-
         if (existingRating) {
             return res.status(400).json({ status: false, message: "You have already rated this rider for this order." });
         }
@@ -38,8 +36,8 @@ async function rateRider(req, res) {
             rider.save()
             await Order.findByIdAndUpdate(orderId, {restaurantRating: true})
             await pushNotificationController.sendPushNotification(customerFcm,
-                "New Rating Received ⭐",
-                "You've just received a new rating! Check your profile to see your updated score.", order);
+                "Rider Rated ⭐",
+                "You've just give the rider a new rating.", order);
             await pushNotificationController.sendPushNotification(order.riderFcm,
                 "New Rating Received ⭐",
                 "You've just received a new rating!", order);
