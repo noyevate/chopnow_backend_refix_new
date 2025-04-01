@@ -82,7 +82,7 @@ async function assignRiderToOrder(req, res) {
         if (order.riderAssigned == true) {
             return res.status(404).json({ status: false, message: "Order as already been assigned." });
         }
-        
+
         order.driverId = userId;
         order.riderAssigned = true
         order.riderStatus = "RA"
@@ -93,10 +93,10 @@ async function assignRiderToOrder(req, res) {
         console.log(riderFcm)
         try {
             if (order.customerFcm) {
-                
+
                 await pushNotificationController.sendPushNotification(order.customerFcm, "Rider Assigned", "Woohoo! 🎉 A rider has been assigned to your order!", order);
             }
-             
+
         } catch (e) {
             console.log(`error ${e}`)
         }
@@ -365,51 +365,51 @@ async function updateVehicleImgUrl(req, res) {
 }
 
 async function getRiderById(req, res) {
-    const {riderId} = req.params;
-    
+    const { riderId } = req.params;
+
     try {
 
         const rider = await Rider.findById(riderId)
         if (!rider) {
-            return res.status(404).json({status: false, message: "Rider not found"})
+            return res.status(404).json({ status: false, message: "Rider not found" })
         }
         return res.status(200).json(rider)
     } catch (error) {
-        res.status(500).json({status: false, message: "Failed to fetch rider"})
+        res.status(500).json({ status: false, message: "Failed to fetch rider" })
     }
 }
 
 async function getRiderUserById(req, res) {
-    const {userId} = req.params;
-    
+    const { userId } = req.params;
+
     try {
 
         const user = await User.findById(userId)
         if (!user) {
-            return res.status(404).json({status: false, message: "Rider not found"})
+            return res.status(404).json({ status: false, message: "Rider not found" })
         }
-        if(user.userType != "Rider") {
-            return res.status(404).json({status: false, message: "Rider not found"})
+        if (user.userType != "Rider") {
+            return res.status(404).json({ status: false, message: "Rider not found" })
         }
         return res.status(200).json(user)
     } catch (error) {
-        res.status(500).json({status: false, message: "Failed to fetch rider"})
+        res.status(500).json({ status: false, message: "Failed to fetch rider" })
     }
 }
 
-async function updateRiderStatus(req, res) { 
+async function updateRiderStatus(req, res) {
     const { orderId, riderStatus, riderFcm } = req.params;
     try {
         // Validate the order status
-        const validStatuses = ["NRA", "RA", "AR", "TDP", "ADP" ,"OD"];
+        const validStatuses = ["NRA", "RA", "AR", "TDP", "ADP", "OD"];
         if (!validStatuses.includes(riderStatus)) {
             return res.status(400).json({ status: false, message: "Invalid order status" });
         }
 
         // Find and update the order
-        const order = await Order.findByIdAndUpdate(orderId, { riderStatus: riderStatus,  }, { new: true });
-        
-        if (!order) { 
+        const order = await Order.findByIdAndUpdate(orderId, { riderStatus: riderStatus, }, { new: true });
+
+        if (!order) {
             return res.status(404).json({ status: false, message: "Order not found" });
         }
 
@@ -420,9 +420,11 @@ async function updateRiderStatus(req, res) {
             "AR": { title: "🚴‍♂️ Rider Update", body: "Your rider has arrived at the restaurant! 🍽️" },
             "TDP": { title: "🚴‍♂️ Rider Update", body: "On the way! 🛵 Your order is heading to you! 📍" },
             "ADP": { title: "🚴‍♂️ Rider Update", body: "Your rider is at your location! 🚪 Open up! 🙌" },
-            "OA": { title: "🎉 Order Delivered!", body: "Enjoy your meal! 😋🍽️" },
+            "OD": { title: "🎉 Order Delivered!", body: "Enjoy your meal! 😋🍽️" },
         };
-        
+
+
+
 
         const { title, body } = statusMessages[riderStatus] || { title: "Order Update", body: `Your order is now ${riderStatus}` };
 
@@ -431,11 +433,39 @@ async function updateRiderStatus(req, res) {
             if (order.customerFcm) {
                 await pushNotificationController.sendPushNotification(order.customerFcm, title, body, order);
             }
-        } catch(e) {
+        } catch (e) {
             console.log(`error ${e}`)
         }
         console.log(riderFcm)
-        await pushNotificationController.sendPushNotification(riderFcm, title, body, order);
+        const riderStatusMessages = {
+            "NRA": {
+                title: "📦 Order Update",
+                body: "Waiting for an order to be assigned... ⏳"
+            },
+            "RA": {
+                title: "📦 Order Update",
+                body: "You've been assigned a new order! 🚀 Check details and head to the restaurant."
+            },
+            "AR": {
+                title: "🏠 Arrival Confirmed",
+                body: "You’ve arrived at the restaurant! 🍽️ Confirm pickup when ready."
+            },
+            "TDP": {
+                title: "🛵 Delivery in Progress",
+                body: "You're on your way to deliver the order! 🚀 Stay safe!"
+            },
+            "ADP": {
+                title: "📍 Arrived at Destination",
+                body: "You've reached the customer's location! 🚪 Tap to notify them."
+            },
+            "OA": {
+                title: "✅ Order Completed",
+                body: "Order delivered successfully! 🎉 Great job!"
+            },
+        };
+        const { title2, body2 } = statusMessages[riderStatus] || { title: "Order Update", body: `Your order is now ${riderStatus}` };
+
+        await pushNotificationController.sendPushNotification(riderFcm, title2, body2, order);
 
         res.status(200).json({ status: true, message: "Order status updated successfully", order });
 
@@ -447,17 +477,17 @@ async function updateRiderStatus(req, res) {
 
 
 async function getRiderByUserId(req, res) {
-    const {userId} = req.params;
-    
+    const { userId } = req.params;
+
     try {
 
-        const rider = await Rider.findOne({userId})
+        const rider = await Rider.findOne({ userId })
         if (!rider) {
-            return res.status(404).json({status: false, message: "Rider not found"})
+            return res.status(404).json({ status: false, message: "Rider not found" })
         }
         return res.status(200).json(rider)
     } catch (error) {
-        res.status(500).json({status: false, message: "Failed to fetch rider"})
+        res.status(500).json({ status: false, message: "Failed to fetch rider" })
     }
 }
 
