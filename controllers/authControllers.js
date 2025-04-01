@@ -333,7 +333,7 @@ async function login(req, res) {
     }
 
     // Generate JWT token
-    const token = jwt.sign({ id: user._id, userType: user.userType, phone: user.phone }, process.env.JWT_SECRET, { expiresIn: '5h' });
+    const token = jwt.sign({ id: user._id, userType: user.userType, phone: user.phone }, process.env.JWT_SECRET, { expiresIn: '50d' });
     let price = await Price.findOne();
 
     const { password, otp, createdAt, updatedAt, ...others } = user._doc;
