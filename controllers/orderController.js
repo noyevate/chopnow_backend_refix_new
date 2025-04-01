@@ -22,7 +22,7 @@ async function placeOrder(req, res) {
         const riders = await Rider.find()
         const riderTokens = riders.map(rider => rider.fcm).filter(token => token);
         if (riderTokens.length > 0) {
-            await pushNotificationController.sendPushNotification(riderTokens,"🚨 New Order Alert!", "A fresh order is waiting for pickup. Let's go!  🚴‍♂️💨", newOrder );
+            await pushNotificationController.sendPushNotificationToRider(riderTokens,"🚨 New Order Alert!", "A fresh order is waiting for pickup. Let's go!  🚴‍♂️💨", newOrder );
             
         }
         await pushNotificationController.sendPushNotification(newOrder.customerFcm, "Order created", "Order received with a sprinkle of magic! ✨🍔", newOrder);
