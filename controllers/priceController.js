@@ -2,7 +2,7 @@ const Price = require("../models/Price");
 
 
 async function createPrice (req, res) {
-    const {basePrice} = req.params;
+    const {basePrice, serviceFee} = req.params;
 
     try {
     if(!basePrice) {
@@ -14,6 +14,7 @@ async function createPrice (req, res) {
     }
     const newPrice = new Price({
         basePrice: basePrice,
+        serviceFee: serviceFee,
         time: Date.now()
     });
     await newPrice.save();
@@ -62,6 +63,27 @@ const updatePrice = async (req, res) => {
     }
 };
 
+async function updateServiceFee (req, res) {
+    const {serviceFee} = req.params
+    
+    try {
+        const price = await Price.findOne()
+        if(!price) {
+            return res.status(404).json({status: false, message: "dat not found"})
+        }
+        price.serviceFee = serviceFee
+        await price.save()
+        res.status(200).json({
+            status: true,
+            message: "service fee updated successfully",
+            price: price
+        });
+
+    } catch (error) {
+        res.status(500).json({status: false, message: "something went wrong"})      
+    }
+}
+
 
 
 async function getPrice(req, res) {
@@ -82,4 +104,4 @@ async function getPrice(req, res) {
 
 
 
-module.exports = {createPrice, updatePrice, getPrice}
+module.exports = {createPrice, updatePrice, getPrice, updateServiceFee}

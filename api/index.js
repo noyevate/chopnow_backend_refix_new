@@ -18,6 +18,8 @@ const RiderRoute = require("../routes/riderRoutes");
 const RiderRatingRoute = require("../routes/riderRatingRoutes");
 const PriceRoute = require("../routes/priceRoute");
 
+const OtherRoute = require("../routes/othersRoute");
+
 require("../services/firebaseConfig.js")
 
 dotenv.config();
@@ -45,6 +47,7 @@ app.use('/api/pack', PackRoute);
 app.use('/api/rider', RiderRoute);
 app.use('/api/rider_rating', RiderRatingRoute);
 app.use('/api/price', PriceRoute);
+app.use('/api/others', OtherRoute);
 
 
 app.listen(port, () => console.log(`chopnow backend services is running on port: ${port}`))

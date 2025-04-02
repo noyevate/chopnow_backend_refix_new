@@ -4,8 +4,6 @@ const User = require("../models/User")
 const Rider = require("../models/Rider")
 const pushNotificationController = require("./pushNotificationController")
 
-
-
 async function placeOrder(req, res) {
 
     const newOrder = new Order({
@@ -79,29 +77,6 @@ async function getOrdersByRestaurantId(req, res) {
     }
 }
 
-
-
-// async function updateOrderStatus(req, res) {
-//     const { orderId, orderStatus } = req.params; // Access orderStatus from params
-
-//     // Optional: You can validate orderStatus if you want to restrict it to certain values
-//     if (!orderStatus) {
-//         return res.status(400).json({ status: false, message: "Order status is required" });
-//     }
-
-//     try {
-//         const order = await Order.findByIdAndUpdate(orderId, { orderStatus }, { new: true });
-
-//         if (!order) {
-//             return res.status(404).json({ status: false, message: "Order not found" });
-//         }
-
-//         res.status(201).json({ status: true, message: "Order status updated successfully", order });
-//     } catch (error) {
-//         console.error("Update order status error:", error);
-//         res.status(500).json({ status: false, message: error.message });
-//     }
-// }
 
 
 async function updateOrderStatus(req, res) { 
@@ -179,13 +154,6 @@ async function getOrdersByStatusAndPayment(req, res) {
 
 async function getAllOrdersByRestaurantId(req, res) {
     const restaurantId = req.params.restaurantId;
-
-    // if (!mongoose.Types.ObjectId.isValid(id)) {
-    //     return res.status(400).json({
-    //         status: false,
-    //         message: 'Invalid restaurantId format',
-    //     });
-    // }
 
     try {
         // Find orders by restaurantId

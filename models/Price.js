@@ -1,7 +1,8 @@
 const mongoose = require('mongoose');
 
 const PriceSchema = new mongoose.Schema({
-    basePrice: { type: Number, required: true },
+    basePrice: { type: Number },
+    serviceFee: {type: Number},
     time: { type: Date, default: Date.now },
     oldPrices: [ // Array to store historical prices
         {

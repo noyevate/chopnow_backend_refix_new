@@ -3,6 +3,7 @@ const User = require('../models/User');
 const Rider = require("../models/Rider");
 const Restaurant = require("../models/Restaurant");
 const Price = require("../models/Price")
+const Others = require("../models/Others")
 
 const { generateOTP, hashPIN } = require('../utils/generate_otp');
 const { sendOTP } = require('../utils/send_otp');
@@ -19,7 +20,7 @@ const validateEmail = async (email) => {
   }
 
   const existingUser = await User.findOne({ email });
-  if (existingUser.userType == "Client") {
+  if (existingUser && existingUser.userType == "Client") {
     return { status: false, message: 'Email already exists. Login to continue' };
   }
 
@@ -84,22 +85,25 @@ async function validatePassword(req, res) {
 
 async function createAccount(req, res) {
   const { first_name, last_name, phone, email, fcm } = req.body;
-
+  
   try {
     // Validate email
     const emailValidation = await validateEmail(email);
     if (!emailValidation.status) {
       return res.status(400).json(emailValidation);
     }
+    
 
     // Validate phone
     const phoneRegex = /^(?:0)?[789]\d{9}$/;
     if (!phoneRegex.test(phone)) {
       return res.json({ status: false, message: 'Phone number Invalid.' });
     }
+    
 
     // Prepend "+234" to the phone number if it doesn't already start with it
     const formattedPhone = phone.startsWith('+234') ? phone : '+234' + phone.replace(/^0/, '');
+    
 
     const existingUser = await User.findOne({ phone: formattedPhone });
     if (existingUser) {
@@ -108,7 +112,7 @@ async function createAccount(req, res) {
 
     // Generate OTP
     const otp = generateOTP();
-
+  
     // Create new user
     const user = new User({
       first_name,
@@ -120,15 +124,18 @@ async function createAccount(req, res) {
       fcm 
     });
 
+
     await user.save();
      // Try fetching the rider details (but don't stop execution if it fails)
      let price = await Price.findOne();
+     let others = await Others.findOne();
 
     // Send OTP
 
     try {
       // Send OTP
       await sendEmail(user.email, otp);
+
     } catch (emailError) {
       console.log("Email verification failed: ", emailError);
 
@@ -148,11 +155,14 @@ async function createAccount(req, res) {
         phone: user.phone,
         email: user.email
       },
-      price: price.basePrice || null
+      price: price.basePrice || null,
+      service_charge: price.serviceFee,
+      others: others
     });
 
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error });
+    console.error("Error in createAccount:", error);
+    res.status(500).json({ message: 'Server error', error:error.message });
   }
 }
 
@@ -335,9 +345,10 @@ async function login(req, res) {
     // Generate JWT token
     const token = jwt.sign({ id: user._id, userType: user.userType, phone: user.phone }, process.env.JWT_SECRET, { expiresIn: '50d' });
     let price = await Price.findOne();
+    let location = await Others.findOne();
 
     const { password, otp, createdAt, updatedAt, ...others } = user._doc;
-    res.status(200).json({ ...others, token, price: price.basePrice || null });
+    res.status(200).json({ ...others, token, price: price.basePrice || null , sevice_charge: price.serviceFee, location: location});
   } catch (error) {
     console.error('Error in login:', error);
     res.status(500).json({ message: 'Server error', error });
