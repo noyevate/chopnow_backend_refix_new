@@ -24,6 +24,7 @@ async function placeOrder(req, res) {
             
         }
         await pushNotificationController.sendPushNotification(newOrder.customerFcm, "Order created", "Order received with a sprinkle of magic! ✨🍔", newOrder);
+        await pushNotificationController.sendPushNotification(newOrder.restaurantFcm, "🚨 New Order Alert!", "A fresh order is waiting to be prepared. Let's go!  🚴‍♂️💨", newOrder)
         res.status(201).json({ status: true, message: "Order placed successfully", orderId: orderId });
         console.log(orderId)
     } catch (error) {

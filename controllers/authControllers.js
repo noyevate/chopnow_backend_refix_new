@@ -411,7 +411,13 @@ async function loginVendor(req, res) {
       return res.status(500).json({ status: false, message: "Error decrypting password" });
     }
 
-    let restaurant = await Restaurant.findOne({ userId: user._id }).lean(); // Use .lean() for a plain object
+    const restaurant = await Restaurant.findOne({ userId: user._id }).lean(); // Use .lean() for a plain object
+    let cleanedRestaurant = null;
+    if(restaurant) {
+      const{__v, createdAt, updatedAt, restaurant_categories, ...rest } = restaurant
+      cleanedRestaurant = rest
+    }
+    
 
     const userToken = jwt.sign(
       {
@@ -423,8 +429,8 @@ async function loginVendor(req, res) {
       { expiresIn: "50d" }
     );
 
-    const { password, otp, createdAt, updatedAt, otpExpires, ...others } = user._doc;
-    res.status(201).json({ ...others, userToken, restaurant: restaurant || null });
+    const { password, otp, createdAt, updatedAt, otpExpires,   ...others } = user._doc;
+    res.status(201).json({ ...others, userToken, restaurant: cleanedRestaurant || null });
   } catch (error) {
     console.error("Login error:", error); // Log login error
     return res.status(500).json({ status: false, message: error.message });

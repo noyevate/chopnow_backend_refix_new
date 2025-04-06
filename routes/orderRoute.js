@@ -12,16 +12,16 @@ router.get("/status-and-payment", verifyTokenAndAuthorization,  orderController.
 router.get("/:restaurantId/:orderStatus/:paymentStatus", verifyTokenAndAuthorization, orderController.getOrdersByRestaurantId);
 
 
-router.get("/:restaurantId",  orderController.getAllOrdersByRestaurantId);
+router.get("/:restaurantId",  verifyTokenAndAuthorization, orderController.getAllOrdersByRestaurantId);
 
-router.get("/get-all-order/by/:orderStatus/:paymentStatus", orderController.getAllOrdersByOrderStatus);
+router.get("/get-all-order/by/:orderStatus/:paymentStatus",verifyTokenAndAuthorization, orderController.getAllOrdersByOrderStatus);
 
 // router.get("/:restaurantId/:orderStatus/:paymentStatus", verifyTokenAndAuthorization,  orderController.getOrdersByRestaurantId);
-router.get('/fetch-order/:orderId',   orderController.getOrderByOrderId);
+router.get('/fetch-order/:orderId', verifyTokenAndAuthorization,  orderController.getOrderByOrderId);
 
 
 
-router.patch('/updateOrderStatus/:orderId/:orderStatus',   orderController.updateOrderStatus);
+router.patch('/updateOrderStatus/:orderId/:orderStatus',  verifyTokenAndAuthorization, orderController.updateOrderStatus);
 // router.patch('/updateOrderStatus/:orderId', verifyTokenAndAuthorization,  orderController.updateOrderStatus);
 
 // router.get("/status-and-payment", verifyTokenAndAuthorization,  orderController.getOrdersByStatusAndPayment);
