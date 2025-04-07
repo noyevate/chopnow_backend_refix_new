@@ -124,14 +124,14 @@ async function updateOrderStatus(req, res) {
 
 
         const statusMessages2 = {
-            "Placed": {title_1: "🧾 New Order Alert!",body_1: "A hungry customer just placed a new order. Time to cook up some joy!"},
-            "Accepted": {title_1: "✅ Order Accepted", body_1: "You've accepted the order. Let’s get choppin!! 🍳"},
-            "Preparing": {title_1: "🍽️ Preparing Meal", body_1: "Cooking in progress. Let’s make this delicious!"},
-            "Manual": { title_1: "🛠️ Manual Update", body_1: "You’ve manually updated this order's status."},
-            "Cancelled": { title_1: "❌ Order Cancelled",body_1: "You’ve cancelled this order. The customer will be notified."},
-            "Delivered": {title_1: "📦 Order Delivered", body_1: "The order has been delivered successfully. Great job!" },
-            "Ready": {  title_1: "🛍️ Ready for Pickup",  body_1: "Meal is packed and ready. Waiting for pickup!"},
-            "Out_For_Delivery": {title_1: "🚚 Out for Delivery", body_1: "Food is on the road! Hope it gets there hot and fresh! 🔥" }
+            "Placed": { title_1: "🧾 New Order Alert!", body_1: "A hungry customer just placed a new order. Time to cook up some joy!" },
+            "Accepted": { title_1: "✅ Order Accepted", body_1: "You've accepted the order. Let’s get choppin!! 🍳" },
+            "Preparing": { title_1: "🍽️ Preparing Meal", body_1: "Cooking in progress. Let’s make this delicious!" },
+            "Manual": { title_1: "🛠️ Manual Update", body_1: "You’ve manually updated this order's status." },
+            "Cancelled": { title_1: "❌ Order Cancelled", body_1: "You’ve cancelled this order. The customer will be notified." },
+            "Delivered": { title_1: "📦 Order Delivered", body_1: "The order has been delivered successfully. Great job!" },
+            "Ready": { title_1: "🛍️ Ready for Pickup", body_1: "Meal is packed and ready. Waiting for pickup!" },
+            "Out_For_Delivery": { title_1: "🚚 Out for Delivery", body_1: "Food is on the road! Hope it gets there hot and fresh! 🔥" }
         };
 
         const { title_1, body_1 } = statusMessages2[orderStatus] || { title: "Order Update", body: `Your order is now ${orderStatus}` };

@@ -463,7 +463,7 @@ async function updateRiderStatus(req, res) {
                 body: "Order delivered successfully! 🎉 Great job!"
             },
         };
-        const { title2, body2 } = statusMessages[riderStatus] || { title: "Order Update", body: `Your order is now ${riderStatus}` };
+        const { title2, body2 } = riderStatusMessages[riderStatus] || { title: "Order Update", body: `Your order is now ${riderStatus}` };
 
         await pushNotificationController.sendPushNotification(riderFcm, title2, body2, order);
 
