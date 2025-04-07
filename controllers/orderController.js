@@ -20,8 +20,8 @@ async function placeOrder(req, res) {
         const riders = await Rider.find()
         const riderTokens = riders.map(rider => rider.fcm).filter(token => token);
         if (riderTokens.length > 0) {
-            await pushNotificationController.sendPushNotificationToRider(riderTokens,"🚨 New Order Alert!", "A fresh order is waiting for pickup. Let's go!  🚴‍♂️💨", newOrder );
-            
+            await pushNotificationController.sendPushNotificationToRider(riderTokens, "🚨 New Order Alert!", "A fresh order is waiting for pickup. Let's go!  🚴‍♂️💨", newOrder);
+
         }
         await pushNotificationController.sendPushNotification(newOrder.customerFcm, "Order created", "Order received with a sprinkle of magic! ✨🍔", newOrder);
         await pushNotificationController.sendPushNotification(newOrder.restaurantFcm, "🚨 New Order Alert!", "A fresh order is waiting to be prepared. Let's go!  🚴‍♂️💨", newOrder)
@@ -80,7 +80,7 @@ async function getOrdersByRestaurantId(req, res) {
 
 
 
-async function updateOrderStatus(req, res) { 
+async function updateOrderStatus(req, res) {
     const { orderId, orderStatus } = req.params;
     try {
         // Validate the order status
@@ -92,32 +92,53 @@ async function updateOrderStatus(req, res) {
         // Find and update the order
         const order = await Order.findByIdAndUpdate(orderId, { orderStatus: orderStatus }, { new: true });
 
-        if (!order) { 
+        if (!order) {
             return res.status(404).json({ status: false, message: "Order not found" });
         }
 
         // Custom message for each status
         const statusMessages = {
-            "Placed": { title: "Order Placed", body: "Your order has been placed successfully!" },
-            "Accepted": { title: "Order Accepted", body: "Your order has been accepted by the restaurant!" },
-            "Preparing": { title: "Order Preparing", body: "Your order is being prepared by the kitchen!" },
-            "Manual": { title: "Order Update", body: "Your order status has been manually updated!" },
-            "Cancelled": { title: "Order Cancelled", body: "Your order has been cancelled." },
-            "Delivered": { title: "Order Delivered", body: "Your order has been delivered. Enjoy your meal!" },
-            "Ready": { title: "Order Ready", body: "Your order is ready for pickup!" },
-            "Out_For_Delivery": { title: "Out for Delivery", body: "Your order is on its way to you!" }
+            "Placed": { title: "🎉 Order In!", body: "Woohoo! Your foodie adventure just began. 🍽️" },
+            "Accepted": { title: "🍴 Order Accepted", body: "The restaurant's prepping their magic for you!" },
+            "Preparing": { title: "👨‍🍳 Cooking Up!", body: "Your meal is sizzling in the kitchen 🔥" },
+            "Manual": { title: "📋 Order Tweaked", body: "Your order status just got a little update!" },
+            "Cancelled": { title: "❌ Order Cancelled", body: "Sad news! Your order has been cancelled. 😢" },
+            "Delivered": { title: "🍕 Chow Time!", body: "Your food has arrived. Dig in and enjoy! 😋" },
+            "Ready": { title: "🛍️ Ready for Pickup", body: "Your order is hot and ready. Come grab it!" },
+            "Out_For_Delivery": { title: "🛵 On the Way!", body: "Your food is zipping over to you! 🍔" }
         };
+
 
         const { title, body } = statusMessages[orderStatus] || { title: "Order Update", body: `Your order is now ${orderStatus}` };
 
+
+
+
         // Send push notification if an FCM token is available
-        try {
-            if (order.customerFcm) {
-                await pushNotificationController.sendPushNotification(order.customerFcm, title, body, order);
-            }
-        } catch(e) {
-            console.log(`error ${e}`)
+
+        if (order.customerFcm) {
+            await pushNotificationController.sendPushNotification(order.customerFcm, title, body, order);
+        } else {
+            console.log("Something went terribly wrong")
         }
+
+
+        const statusMessages2 = {
+            "Placed": {title_1: "🧾 New Order Alert!",body_1: "A hungry customer just placed a new order. Time to cook up some joy!"},
+            "Accepted": {title_1: "✅ Order Accepted", body_1: "You've accepted the order. Let’s get choppin!! 🍳"},
+            "Preparing": {title_1: "🍽️ Preparing Meal", body_1: "Cooking in progress. Let’s make this delicious!"},
+            "Manual": { title_1: "🛠️ Manual Update", body_1: "You’ve manually updated this order's status."},
+            "Cancelled": { title_1: "❌ Order Cancelled",body_1: "You’ve cancelled this order. The customer will be notified."},
+            "Delivered": {title_1: "📦 Order Delivered", body_1: "The order has been delivered successfully. Great job!" },
+            "Ready": {  title_1: "🛍️ Ready for Pickup",  body_1: "Meal is packed and ready. Waiting for pickup!"},
+            "Out_For_Delivery": {title_1: "🚚 Out for Delivery", body_1: "Food is on the road! Hope it gets there hot and fresh! 🔥" }
+        };
+
+        const { title_1, body_1 } = statusMessages2[orderStatus] || { title: "Order Update", body: `Your order is now ${orderStatus}` };
+        await pushNotificationController.sendPushNotification(order.restaurantFcm, title_1, body_1, order);
+
+
+
 
         res.status(200).json({ status: true, message: "Order status updated successfully", order });
 
