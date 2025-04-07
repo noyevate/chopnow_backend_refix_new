@@ -81,7 +81,7 @@ async function getOrdersByRestaurantId(req, res) {
 
 
 async function updateOrderStatus(req, res) {
-    const { orderId, orderStatus } = req.params;
+    const { orderId, orderStatus, restaurantFcm } = req.params;
     try {
         // Validate the order status
         const validStatuses = ["Placed", "Accepted", "Preparing", "Manual", "Cancelled", "Delivered", "Ready", "Out_For_Delivery"];
@@ -90,7 +90,7 @@ async function updateOrderStatus(req, res) {
         }
 
         // Find and update the order
-        const order = await Order.findByIdAndUpdate(orderId, { orderStatus: orderStatus }, { new: true });
+        const order = await Order.findByIdAndUpdate(orderId, { orderStatus: orderStatus, restaurantFcm: restaurantFcm }, { new: true });
 
         if (!order) {
             return res.status(404).json({ status: false, message: "Order not found" });
@@ -110,10 +110,6 @@ async function updateOrderStatus(req, res) {
 
 
         const { title, body } = statusMessages[orderStatus] || { title: "Order Update", body: `Your order is now ${orderStatus}` };
-
-
-
-
         // Send push notification if an FCM token is available
 
         if (order.customerFcm) {
@@ -121,7 +117,6 @@ async function updateOrderStatus(req, res) {
         } else {
             console.log("Something went terribly wrong")
         }
-
 
         const statusMessages2 = {
             "Placed": { title_1: "🧾 New Order Alert!", body_1: "A hungry customer just placed a new order. Time to cook up some joy!" },
@@ -135,10 +130,7 @@ async function updateOrderStatus(req, res) {
         };
 
         const { title_1, body_1 } = statusMessages2[orderStatus] || { title: "Order Update", body: `Your order is now ${orderStatus}` };
-        await pushNotificationController.sendPushNotification(order.restaurantFcm, title_1, body_1, order);
-
-
-
+        await pushNotificationController.sendPushNotification(restaurantFcm, title_1, body_1, order);
 
         res.status(200).json({ status: true, message: "Order status updated successfully", order });
 
@@ -147,10 +139,6 @@ async function updateOrderStatus(req, res) {
         res.status(500).json({ status: false, message: error.message });
     }
 }
-
-
-
-
 
 async function getOrdersByStatusAndPayment(req, res) {
     const userId = req.user.id

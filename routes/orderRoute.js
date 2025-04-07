@@ -21,7 +21,7 @@ router.get('/fetch-order/:orderId', verifyTokenAndAuthorization,  orderControlle
 
 
 
-router.patch('/updateOrderStatus/:orderId/:orderStatus',  verifyTokenAndAuthorization, orderController.updateOrderStatus);
+router.patch('/updateOrderStatus/:orderId/:orderStatus/:restaurantFcm',  verifyTokenAndAuthorization, orderController.updateOrderStatus);
 // router.patch('/updateOrderStatus/:orderId', verifyTokenAndAuthorization,  orderController.updateOrderStatus);
 
 // router.get("/status-and-payment", verifyTokenAndAuthorization,  orderController.getOrdersByStatusAndPayment);

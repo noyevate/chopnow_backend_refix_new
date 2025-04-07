@@ -1,14 +1,14 @@
 const express = require('express');
 const router = express.Router();
 const priceController = require('../controllers/priceController');
-const {verifyTokenAndAuthorization} = require('../middlewares/verifyToken')
+const {verifyAdmin} = require('../middlewares/verifyToken')
 
-router.patch("/:serviceFee", priceController.updateServiceFee);
-router.post("/:basePrice/:serviceFee", priceController.createPrice),
+router.patch("/:serviceFee", verifyAdmin, priceController.updateServiceFee);
+router.post("/:basePrice/:serviceFee", verifyAdmin, priceController.createPrice),
 
-router.get("/", priceController.getPrice),
+router.get("/", verifyAdmin, priceController.getPrice),
 
-router.patch("/update/:id/:basePrice", priceController.updatePrice)
+router.patch("/update/:id/:basePrice", verifyAdmin, priceController.updatePrice)
 
 
 
