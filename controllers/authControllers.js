@@ -248,9 +248,10 @@ async function createRiderAccount(req, res) {
     const formattedPhone = phone.startsWith('+234') ? phone : '+234' + phone.replace(/^0/, '');
     const nwePassword = await hashPIN(password);
     const existingUser = await User.findOne({ email: email });
-    if (existingUser.userType == "Rider" || "Vendor") {
+    if (existingUser && (existingUser.userType === "Rider" || existingUser.userType === "Vendor")) {
       return res.json({ status: false, message: 'Email already exists. Login to continue' });
     }
+    
     const otp = generateOTP();
     // Create new user
     const user = new User({
