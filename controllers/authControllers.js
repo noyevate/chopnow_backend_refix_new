@@ -263,7 +263,7 @@ async function createRiderAccount(req, res) {
       userType: "Rider",
       otp: otp, //otp,
       otpExpires: Date.now() + 10 * 60 * 1000, // OTP valid for 10 minutes
-      fcm
+      fcm: ""
     });
     await user.save();
     // Send OTP
