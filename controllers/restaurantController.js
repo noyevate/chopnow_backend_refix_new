@@ -240,17 +240,30 @@ async function updatedRestaurant(req, res) {
             message: "Restaurant updated successfully",
             updatedRestaurant
         });
-        
+
     } catch (error) {
         res.status(500).json({ status: false, message: error.message });
     }
+}
 
+async function addRestuarantAccountDetails(req, res) {
+    const { restaurantId, accountName, accountNumber, bank } = req.body;
+
+    try {
+        if (!restaurantId) {
+            return res.status(400).json({ status: false, message: "Restaurant Id required" })
+        }
+        const accountDetails = await Restaurant.findByIdAndUpdate(restaurantId, { accountName: accountName, accountNumber: accountNumber, bank: bank }, { new: true })
+        if (!accountDetails) {
+            return res.status(404).json({ status: false, message: "Restaurant not found" })
+        }
+        return res.status(200).json(accountDetails)
+    } catch (error) {
+        return res.status(500).json({ status: false, message: error.message })
+
+    }
 }
 
 
-
-
-
-
-module.exports = { addRestaurant, getRestaurantById, addTimeToRestaurant, getRestaurantByUser, getRestaurantbyUserId, getRandomRestaurant, getAllNearbyRestaurant, restaurantAvailability, getPopularRestaurant, updatedRestaurant }
+module.exports = { addRestaurant, getRestaurantById, addTimeToRestaurant, getRestaurantByUser, getRestaurantbyUserId, getRandomRestaurant, getAllNearbyRestaurant, restaurantAvailability, getPopularRestaurant, updatedRestaurant, addRestuarantAccountDetails }
 
