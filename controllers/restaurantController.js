@@ -173,7 +173,7 @@ async function addTimeToRestaurant(req, res) {
                 message: 'Missing required fields: orderType, day, open, close.',
             });
         }
-        const restaurant = await Restaurant.findById(restaurantId);
+        const restaurant = await Restaurant.findOne({ _id: restaurantId });
         if (!restaurant) {
             return res.status(404).json({
                 success: false,
@@ -217,8 +217,8 @@ async function updatedRestaurant(req, res) {
         // Update restaurant with new data
         const updatedRestaurant = await Restaurant.findByIdAndUpdate(
             restaurantId,
-            { $set: updateData },  // Set the new values
-            { new: true, runValidators: true } // Return the updated document and run schema validators
+            { $set: updateData }, 
+            { new: true, runValidators: true } 
         );
 
         res.status(201).json({
