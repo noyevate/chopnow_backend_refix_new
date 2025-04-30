@@ -164,31 +164,23 @@ async function getPopularRestaurant(req, res) {
 
 async function addTimeToRestaurant(req, res) {
     try {
-        const { userId } = req.params; // Get restaurantId from URL params
+        const { restaurantId } = req.params; // Get restaurantId from URL params
         const { orderType, day, open, close, orderCutOffTime, menuReadyTime } = req.body;
 
-        // Validate the input
         if (!orderType || !day || !open || !close) {
             return res.status(400).json({
                 success: false,
                 message: 'Missing required fields: orderType, day, open, close.',
             });
         }
-
-        // Find the restaurant by ID
         const restaurant = await Restaurant.findById(restaurantId);
-
         if (!restaurant) {
             return res.status(404).json({
                 success: false,
                 message: 'Restaurant not found.',
             });
         }
-
-        // Clear the existing time entries
         restaurant.time = [];
-
-        // Create the new time entry object
         const newTimeEntry = {
             orderType,
             day,
@@ -197,14 +189,8 @@ async function addTimeToRestaurant(req, res) {
             orderCutOffTime: orderCutOffTime || null,
             menuReadyTime: menuReadyTime || null,
         };
-
-        // Add the new time entry to the restaurant's time array
         restaurant.time.push(newTimeEntry);
-
-        // Save the restaurant with the updated time array
         await restaurant.save();
-
-        // Respond with a success message
         return res.status(200).json({
             success: true,
             message: 'All existing time entries deleted and new time added successfully.',
