@@ -165,7 +165,7 @@ async function getPopularRestaurant(req, res) {
 async function addTimeToRestaurant(req, res) {
 
     try {
-        const  restaurantId  = req.params.id; // Get restaurantId from URL params
+        const  id  = req.params.id; // Get restaurantId from URL params
         const { orderType, day, open, close, orderCutOffTime, menuReadyTime } = req.body;
 
         if (!orderType || !day || !open || !close) {
