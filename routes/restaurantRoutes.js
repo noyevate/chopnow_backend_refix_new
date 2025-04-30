@@ -12,7 +12,7 @@ router.get("/byId/:id", restaurantController.getRestaurantById);
 router.get("/byUserId/:userId", restaurantController.getRestaurantByUser);
 router.get("/", restaurantController.getRestaurantbyUserId);
 router.post('/toggle-availability/:id', verifyVendor, restaurantController.restaurantAvailability);
-router.post("/addTime/:userId", verifyVendor, restaurantController.addTimeToRestaurant);
+router.post("/addTime/:id", verifyVendor, restaurantController.addTimeToRestaurant);
 router.put('/updateRestaurant/:restaurantId', verifyVendor, restaurantController.updatedRestaurant);
 
 module.exports = router;

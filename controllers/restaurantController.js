@@ -163,8 +163,9 @@ async function getPopularRestaurant(req, res) {
 
 
 async function addTimeToRestaurant(req, res) {
+
     try {
-        const { restaurantId } = req.params; // Get restaurantId from URL params
+        const  restaurantId  = req.params.id; // Get restaurantId from URL params
         const { orderType, day, open, close, orderCutOffTime, menuReadyTime } = req.body;
 
         if (!orderType || !day || !open || !close) {
@@ -173,7 +174,7 @@ async function addTimeToRestaurant(req, res) {
                 message: 'Missing required fields: orderType, day, open, close.',
             });
         }
-        const restaurant = await Restaurant.findOne({ _id: restaurantId });
+        const restaurant = await Restaurant.findById(id)
         if (!restaurant) {
             return res.status(404).json({
                 success: false,
