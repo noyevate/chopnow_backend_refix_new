@@ -7,7 +7,7 @@ const mongoose = require('mongoose');
 
 async function addFood(req, res) {
     const { title, foodTags, category, restaurant_category, code, restaurant, description, time, price, additive, imageUrl } = req.body;
-    if (!title || !foodTags || !category || !code || !restaurant || !description || !time || !price || !additive || !imageUrl || !restaurant_category ) {
+    if (!title || !foodTags || !category || !code || !restaurant || !description || !time || !price || !additive || !imageUrl || !restaurant_category) {
         return res.status(400).json({ status: false, message: "You have a missing field" });
     }
 
@@ -524,70 +524,71 @@ async function updateRestaurantCategory(req, res) {
 
 async function fetchAdditivesForSingleFood(req, res) {
     const { foodId } = req.params; // Get the food ID from the request parameters
-  
+
     try {
-      // Fetch the food document by its ID
-      const food = await Food.findById(foodId);
-  
-      if (!food) {
-        return res.status(404).json({ message: 'Food not found' });
-      }
-  
-      // Extract additiveIds from the food's additive field
-      const additiveIds = food.additive.map((additive) => additive.additiveId);
-  
-      // Fetch additives that match the additiveIds
-      const resolvedAdditives = await Additives.find({ _id: { $in: additiveIds } });
-  
-      res.status(200).json(resolvedAdditives);
+        // Fetch the food document by its ID
+        const food = await Food.findById(foodId);
+
+        if (!food) {
+            return res.status(404).json({ message: 'Food not found' });
+        }
+
+        // Extract additiveIds from the food's additive field
+        const additiveIds = food.additive.map((additive) => additive.additiveId);
+
+        // Fetch additives that match the additiveIds
+        const resolvedAdditives = await Additives.find({ _id: { $in: additiveIds } });
+
+        res.status(200).json(resolvedAdditives);
     } catch (error) {
-      res.status(500).json({ message: `Internal server error: ${error.message}` });
+        res.status(500).json({ message: `Internal server error: ${error.message}` });
     }
-  }
+}
 
-  // frt single pack
+// frt single pack
 
-  async function fetchPackForSingleFood(req, res) {
+async function fetchPackForSingleFood(req, res) {
     const { foodId } = req.params; // Get the food ID from the request parameters
-  
+
     try {
-      // Fetch the food document by its ID
-      const food = await Food.findById(foodId);
-  
-      if (!food) {
-        return res.status(404).json({ message: 'Food not found' });
-      }
-  
-      // Extract additiveIds from the food's additive field
-      const packIds = food.pack.map((pack) => pack.packId);
-  
-      // Fetch additives that match the additiveIds
-      const resolvedPacks = await Packs.find({ _id: { $in: packIds } });
-  
-      res.status(200).json(resolvedPacks);
+        // Fetch the food document by its ID
+        const food = await Food.findById(foodId);
+
+        if (!food) {
+            return res.status(404).json({ message: 'Food not found' });
+        }
+
+        // Extract additiveIds from the food's additive field
+        const packIds = food.pack.map((pack) => pack.packId);
+
+        // Fetch additives that match the additiveIds
+        const resolvedPacks = await Packs.find({ _id: { $in: packIds } });
+
+        res.status(200).json(resolvedPacks);
     } catch (error) {
-      res.status(500).json({ message: `Internal server error: ${error.message}` });
+        res.status(500).json({ message: `Internal server error: ${error.message}` });
     }
-  }
+}
 
 
 
 
-module.exports = { addFood, 
-    fetchRestaurantCategories, 
-    getFoodById, 
-    getRandomFood, 
-    getFoodByCategoryAndCode, 
-    getFoodsByRestaurant, 
-    getallFoodsByCodee, 
-    searchFood, 
-    getRandomFoodByCodeAndCategory, 
-    getFoodByCategory, 
-    searchRestaurantFood, 
-    searchFoodAndRestaurant, 
-    fetchFoodByCategory, 
-    fetchRestaurantAdditives, 
-    filteredFoodByRestaurantCategory, 
+module.exports = {
+    addFood,
+    fetchRestaurantCategories,
+    getFoodById,
+    getRandomFood,
+    getFoodByCategoryAndCode,
+    getFoodsByRestaurant,
+    getallFoodsByCodee,
+    searchFood,
+    getRandomFoodByCodeAndCategory,
+    getFoodByCategory,
+    searchRestaurantFood,
+    searchFoodAndRestaurant,
+    fetchFoodByCategory,
+    fetchRestaurantAdditives,
+    filteredFoodByRestaurantCategory,
     restaurantCategoryAvailability,
     updateRestaurantCategory,
     fetchAdditivesForSingleFood,

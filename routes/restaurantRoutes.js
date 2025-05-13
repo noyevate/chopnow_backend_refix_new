@@ -4,8 +4,8 @@ const {verifyVendor} = require('../middlewares/verifyToken');
 const {verifyTokenAndAuthorization} = require('../middlewares/verifyToken')
 
 router.post("/", verifyVendor, restaurantController.addRestaurant);
-router.get('/popular', verifyVendor, restaurantController.getPopularRestaurant);
-router.post('/account_details', restaurantController.addRestuarantAccountDetails);
+router.get('/popular', verifyTokenAndAuthorization, restaurantController.getPopularRestaurant);
+router.post('/account_details', verifyVendor, restaurantController.addRestuarantAccountDetails);
 router.get("/:code",  restaurantController.getRandomRestaurant);
 router.get("/all/:code", restaurantController.getAllNearbyRestaurant);
 router.get("/byId/:id", restaurantController.getRestaurantById);
