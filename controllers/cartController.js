@@ -14,7 +14,7 @@ async function addProductToCart(req, res) {
  
              await existingProduct.save(); // Save the updated cart item
  
-             return res.status(200).json({ status: true, count: count });
+             return res.status(201).json({ status: true, count: count });
             
         } else {
             const newCartItem = new Cart({
