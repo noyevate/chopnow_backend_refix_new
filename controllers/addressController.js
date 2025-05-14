@@ -70,12 +70,13 @@ async function addAddress(req, res) {
             longitude: req.body.longitude
         });
 
-        await newAddress.save();
+        const address = await newAddress.save();
         console.log("Saved Address:", newAddress);
 
         return res.status(201).json({
             status: true,
-            message: "Address successfully created"
+            message: "Address successfully created",
+            address: address
         });
 
     } catch (error) {
