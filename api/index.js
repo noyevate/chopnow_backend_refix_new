@@ -60,7 +60,7 @@ app.use('/api/price', PriceRoute);
 app.use('/api/others', OtherRoute);
 
 
-startRiderSimulation("682df4a32d550ac1f22977ed", "68b2a4f01878cb7e828c7bef");
+// startRiderSimulation("682df4a32d550ac1f22977ed", "68b2a4f01878cb7e828c7bef");
 
 
 // create server
