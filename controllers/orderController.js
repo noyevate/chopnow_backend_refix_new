@@ -3,6 +3,7 @@ const admin = require('firebase-admin');
 const User = require("../models/User")
 const Rider = require("../models/Rider")
 const pushNotificationController = require("./pushNotificationController")
+const redisClient = require("../services/redisClients");
 
 async function placeOrder(req, res) {
 
@@ -242,4 +243,17 @@ async function getOrderByOrderId(req, res) {
     }
 }
 
-module.exports = { placeOrder, getDeliveredAndCancelledOrders, getAllUserOrders, getUserOrder, getOrdersByRestaurantId, updateOrderStatus, getOrdersByStatusAndPayment, getAllOrdersByRestaurantId, getAllOrdersByOrderStatus, getOrderByOrderId }
+async function getLastRiderLocation(req, res) {
+    try {
+        const { orderId } = req.params;
+        const data = await redisClient.get(`order:${orderId}:location`);
+        if (!data) {
+            res.status(404).json({ status: false, message: "No location available" });
+        }
+        res.json({ stattus: true, location: JSON.parse(data) })
+    } catch (error) {
+        res.status(500).json({ status: false, message: error.message })
+    }
+}
+
+module.exports = { placeOrder, getDeliveredAndCancelledOrders, getAllUserOrders, getUserOrder, getOrdersByRestaurantId, updateOrderStatus, getOrdersByStatusAndPayment, getAllOrdersByRestaurantId, getAllOrdersByOrderStatus, getOrderByOrderId, getLastRiderLocation }

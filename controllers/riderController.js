@@ -4,6 +4,8 @@ const Rider = require("../models/Rider");
 const RiderRating = require('../models/RiderRating');
 const User = require('../models/User');
 const pushNotificationController = require("./pushNotificationController")
+// const { io } = require("../services/socket_io");
+const { getIO } = require("../services/socket_io");
 
 
 async function createRider(req, res) {
@@ -80,7 +82,7 @@ async function assignRiderToOrder(req, res) {
             return res.status(404).json({ status: false, message: "Order not found." });
         }
         if (order.riderAssigned == true) {
-            return res.status(404).json({ status: false, message: "Order as already been assigned." });
+            return res.status(404).json({ status: false, message: "Order as already been assFigned." });
         }
 
         order.driverId = userId;
@@ -95,16 +97,25 @@ async function assignRiderToOrder(req, res) {
             if (order.customerFcm) {
 
                 await pushNotificationController.sendPushNotification(order.customerFcm, "Rider Assigned", "Woohoo! 🎉 A rider has been assigned to your order!", order);
+                await pushNotificationController.sendPushNotification(riderFcm, "Rider Assigned", "Woohoo! 🎉 you've been assigned to this order", order);
             }
 
         } catch (e) {
             console.log(`error ${e}`)
         }
-        await pushNotificationController.sendPushNotification(riderFcm, "Rider Assigned", "Woohoo! 🎉 you've been assigned to this order", order);
+        
+        console.log("socket io conection")
+
+        const io = getIO();
+        const order_Id = order._id
+        const rider_Id = order.driverId 
+    io.to(`order_${order._id}`).emit("order:assigned", { order_Id, rider_Id})
 
         res.status(200).json({ status: true, message: "Rider assigned successfully.", data: order });
     } catch (error) {
+        console.log(error)
         res.status(500).json({ status: false, message: "Server error", error: error.message });
+        
     }
 };
 
@@ -464,8 +475,18 @@ async function updateRiderStatus(req, res) {
             },
         };
         const { title2, body2 } = riderStatusMessages[riderStatus] || { title: "Order Update", body: `Your order is now ${riderStatus}` };
+        if (riderStatus === "OD") {
+            const io = getIO();
+            // Emit an event to the specific room for this order
+            io.to(`order_${orderId}`).emit("order:delivered", { orderId: orderId });
+            console.log(`Sent 'order:delivered' event to room order_${orderId}`);
+        }
 
-        await pushNotificationController.sendPushNotification(riderFcm, title2, body2, order);
+        try {
+
+        } catch (error) {
+            await pushNotificationController.sendPushNotification(riderFcm, title2, body2, order);
+        }
 
         res.status(200).json({ status: true, message: "Order status updated successfully", order });
 
@@ -500,3 +521,7 @@ module.exports = {
     updateUserImageUrl, updateDriverLicenseImageUrl, updateParticularsImageUrl, updateVehicleImgUrl,
     getRiderById, getRiderUserById, updateRiderStatus, getRiderByUserId
 }
+
+
+
+// lrange order:682df4a32d550ac1f22977ed:locationHistory 0 -1

@@ -476,9 +476,4 @@ async function ChangePassword(req, res) {
     }
 }
 
-
-
-
-
-
 module.exports = { getUser, verifyPin, changePin, verifyPhone, verifyEmail, resendVendorOTP, ChangePassword, resetVendorPassword, verifyVendorOtpPin, deleteUser, changePhone, requestOTPForgotPIN, verifyOTPForgotPIN, resetPIN, updateUserName , resetPassword};

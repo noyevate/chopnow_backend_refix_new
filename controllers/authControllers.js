@@ -31,7 +31,6 @@ async function validatePhone(req, res) {
   const phone = req.params.phone
   const phoneRegex = /^(?:0)?[789]\d{9}$/;
 
-
   try {
     if (!phoneRegex.test(phone)) {
       return res.status(404).json({ status: false, message: 'Phone number Invalid.' });
@@ -49,7 +48,6 @@ async function validatePhone(req, res) {
   } catch (e) {
     return res.status(500).json({status: false, message: e})
   }
-
 
 
 }
@@ -445,6 +443,7 @@ async function loginRider(req, res) {
   }
 
   try {
+    console.log("rider login hit")
     const user = await User.findOne({ email: req.body.email });
     if (!user) {
       return res.status(404).json({ status: false, message: "User not found" });

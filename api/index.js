@@ -2,7 +2,11 @@ const express = require('express');
 const app = express();
 const dotenv = require('dotenv')
 const port = process.env.PORT || 4000;
+const http = require('http')
+const { Server } = require('socket.io')
 const mongoose = require('mongoose');
+
+const Redis = require('ioredis') 
 const AuthRoute = require("../routes/authRoute");
 const UserRoute = require("../routes/userRoute");
 const CategoryRoute = require("../routes/categoryRoute");
@@ -19,6 +23,11 @@ const RiderRatingRoute = require("../routes/riderRatingRoutes");
 const PriceRoute = require("../routes/priceRoute");
 
 const OtherRoute = require("../routes/othersRoute");
+const redisClient = require("../services/redisClients");
+
+const { initSocket } = require("../services/socket_io");
+
+const { startRiderSimulation } = require("../controllers/simulated_riderPath");
 
 require("../services/firebaseConfig.js")
 
@@ -27,6 +36,7 @@ dotenv.config();
 mongoose.connect(process.env.MONGOURL).then(() => {
     console.log("chopnow backend connected to mongoDb database!")
 }).catch((err) =>{console.log(err)})
+
 
 
 app.use(express.json());
@@ -50,4 +60,15 @@ app.use('/api/price', PriceRoute);
 app.use('/api/others', OtherRoute);
 
 
-app.listen(port, () => console.log(`chopnow backend services is running on port: ${port}`))
+startRiderSimulation("682df4a32d550ac1f22977ed", "68b2a4f01878cb7e828c7bef");
+
+
+// create server
+const server = http.createServer(app);
+
+//attach socket.io to server
+initSocket(server);
+
+
+
+server.listen(port, () => console.log(`chopnow backend services is running on port: ${port}`))

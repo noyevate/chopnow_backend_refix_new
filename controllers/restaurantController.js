@@ -153,7 +153,6 @@ async function getPopularRestaurant(req, res) {
             { $limit: 30 }
         ]);
 
-        console.log('Matched Restaurants:', popularRestaurants);
         res.status(200).json(popularRestaurants);
     } catch (err) {
         console.error('Error fetching popular restaurants:', err);
