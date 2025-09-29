@@ -46,7 +46,7 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 const Restaurant = require('./restaurant'); // Import the Restaurant model for the relationship
-const Category = require('./Category');
+const Category = require('./category');
 
 const Food = sequelize.define('Food', {
   // id, createdAt, updatedAt are automatic

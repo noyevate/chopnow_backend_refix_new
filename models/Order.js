@@ -69,7 +69,7 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 const User = require('./user');
-const Address = require('./Address'); // Assuming you have an Address model
+const Address = require('./address'); // Assuming you have an Address model
 const Restaurant = require('./restaurant'); // Assuming you have a Restaurant model
 
 const Order = sequelize.define('Order', {

@@ -7,14 +7,14 @@ const Restaurant = require('./restaurant');
 const Rider = require('./rider');
 const Order = require('./order');
 const OrderItem = require('./orderItems'); // Corrected filename to match model
-const Address = require('./Address');
+const Address = require('./address');
 const Food = require('./food');
 const Rating = require('./rating');
 const RiderRating = require('./riderRating');
 const Cart = require('./cart');
 const Additive = require('./additive');
 const Pack = require('./pack');
-const Category = require('./Category');
+const Category = require('./category');
 const Price = require('./price');
 const Other = require('./others');
 
