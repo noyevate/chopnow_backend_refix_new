@@ -12,7 +12,6 @@ const sequelize = new Sequelize(
     logging: (msg) => console.log(`[SEQUELIZE] ${msg}`),
     timezone: '+00:00', // For writing to the database, always use UTC
     dialectOptions: {
-      useUTC: true, // For reading from the database
     }
   }
 
