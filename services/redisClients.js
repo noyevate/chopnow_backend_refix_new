@@ -11,10 +11,17 @@
 // module.exports = client;
 
 
+// services/redisClients.js
 const redis = require("redis");
 
+// Load environment variables to get the password
+require('dotenv').config();
+
+// Build the connection URL dynamically
+const redisURL = `redis://:${process.env.REDIS_PASSWORD}@127.0.0.1:6379`;
+
 const client = redis.createClient({
-  url: "redis://127.0.0.1:6379"
+  url: redisURL
 });
 
 client.on("error", (err) => console.error("Redis Client Error", err));
