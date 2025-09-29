@@ -1,5 +1,5 @@
 const admin = require('firebase-admin');
-const User = require("../models/User")
+const { User, Order, Rider, Restaurant } = require('../models');
 
 async function sendPushNotificationToRider(fcmTokens, title, body, order) { 
     try {
