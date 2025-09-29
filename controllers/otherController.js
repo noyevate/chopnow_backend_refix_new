@@ -1,71 +1,80 @@
-const Other = require("../models/Others");
+// controllers/otherController.js
+const {Other} = require("../models"); // Import the new Sequelize model
 
-async function CreateOthers (req, res) {
-    const {service_fee, minLat, maxLat, minLng, maxLng} = req.body
-
+// This function creates the *first* configuration or replaces the existing one.
+async function CreateOthers(req, res) {
+    // Get all data from the request body
+    const { minLat, maxLat, minLng, maxLng } = req.body;
 
     try {
+        // Check if a configuration row already exists
         const existingOthers = await Other.findOne();
 
-        if(existingOthers) {
-            await Other.findByIdAndDelete(existingOthers._id);
+        // If one exists, destroy it to maintain a single row.
+        if (existingOthers) {
+            await Other.destroy({ where: { id: existingOthers.id } });
         }
 
-        const newOther = new Other({
+        // Create the new configuration row.
+        const newOther = await Other.create({
             minLat,
             maxLat,
             minLng,
             maxLng
-        })
-        await newOther.save()
-        res.status(201).json(newOther)
-    } catch (error) {
-        res.status(500).json({status: false, message: "something went wrong"})
-    }
+        });
 
+        res.status(201).json({ status: true, message: "Configuration created successfully.", data: newOther });
+
+    } catch (error) {
+        res.status(500).json({ status: false, message: "Something went wrong.", error: error.message });
+    }
 }
 
-
-async function updateLocation (req, res) {
-    const {minLat, maxLat, minLng, maxLng} = req.params
+async function updateLocation(req, res) {
+    const { minLat, maxLat, minLng, maxLng } = req.body;
 
     try {
-        const existingOthers = await Other.findOne()
-        if(!existingOthers) {
-            return res.status(404).json({status: false, message: "data not found"})
-        }
-        existingOthers.minLat = minLat
-        existingOthers.maxLat = maxLat
-        existingOthers.minLng = minLng
-        existingOthers.maxLng = maxLng
+        // Find the single configuration document.
+        const existingOthers = await Other.findOne();
 
-        await existingOthers.save()
+        if (!existingOthers) {
+            return res.status(404).json({ status: false, message: "No configuration found. Please create one first." });
+        }
+
+        // Use the instance .update() method for a clean update.
+        // It saves the changes to the database immediately.
+        const updatedOthers = await existingOthers.update({
+            minLat,
+            maxLat,
+            minLng,
+            maxLng
+        });
+
         res.status(200).json({
             status: true,
-            message: "location updated successfully",
-            others: existingOthers
+            message: "Location configuration updated successfully.",
+            others: updatedOthers
         });
 
     } catch (error) {
-        
+        res.status(500).json({ status: false, message: "Failed to update location configuration.", error: error.message });
     }
 }
+
 async function getLocation(req, res) {
     try {
-        const location = await Other.findOne()
-        if(!location) {
-            return res.status(404).json({status: false, message: "dat not found"})
+        // Fetch the one and only configuration document
+        const locationConfig = await Other.findOne();
+
+        if (!locationConfig) {
+            return res.status(404).json({ status: false, message: "No location configuration found" });
         }
-        return res.status(200).json({status: true, message: "data found", location: location})
 
-    } catch(error) {
+        return res.status(200).json({ status: true, message: "Data found", location: locationConfig });
 
+    } catch (error) {
+        res.status(500).json({ status: false, message: "Failed to fetch location configuration.", error: error.message });
     }
 }
 
-module.exports = {CreateOthers, updateLocation, getLocation}
-
-
-
-
-
+module.exports = { CreateOthers, updateLocation, getLocation };

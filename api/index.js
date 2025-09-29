@@ -1,12 +1,13 @@
+const dotenv = require('dotenv')
+dotenv.config();
 const express = require('express');
 const app = express();
-const dotenv = require('dotenv')
+
 const port = process.env.PORT || 4000;
 const http = require('http')
 const { Server } = require('socket.io')
-const mongoose = require('mongoose');
-
-const Redis = require('ioredis') 
+const { Sequelize } = require('sequelize')
+const Redis = require('ioredis')
 const AuthRoute = require("../routes/authRoute");
 const UserRoute = require("../routes/userRoute");
 const CategoryRoute = require("../routes/categoryRoute");
@@ -31,18 +32,23 @@ const { startRiderSimulation } = require("../controllers/simulated_riderPath");
 
 require("../services/firebaseConfig.js")
 
-dotenv.config();
 
-mongoose.connect(process.env.MONGOURL).then(() => {
-    console.log("chopnow backend connected to mongoDb database!")
-}).catch((err) =>{console.log(err)})
+// mongoose.connect(process.env.MONGOURL).then(() => {
+//     console.log("chopnow backend connected to mongoDb database!")
+// }).catch((err) =>{console.log(err)})
+require('../config/database');
+
+
+console.log("AZURE_STORAGE_CONNECTION_STRING:", process.env.AZURE_STORAGE_CONNECTION_STRING);
+console.log("AZURE_LOGS_CONTAINER_NAME:", process.env.AZURE_LOGS_CONTAINER_NAME);
+
 
 
 
 app.use(express.json());
-app.use(express.urlencoded({extended: true}));
+app.use(express.urlencoded({ extended: true }));
 
-app.get('/', (req,res) => res.send("Hello world"));
+app.get('/', (req, res) => res.send("Hello world"));
 app.use('/', AuthRoute);
 app.use('/api/users', UserRoute);
 app.use('/api/category', CategoryRoute);

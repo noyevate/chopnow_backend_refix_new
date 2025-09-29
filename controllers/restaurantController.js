@@ -1,186 +1,244 @@
-const Restaurant = require("../models/Restaurant");
+const { Restaurant, User } = require("../models"); // Import from the central models/index.js
 
+const { Op } = require("sequelize"); 
+const sequelize = require('../config/database');
 
 async function addRestaurant(req, res) {
-    const { title, imageUrl, phone, code, logoUrl, coords, restaurantMail, userId } = req.body;
-    // if (!title || !imageUrl || !phone || !code || !logoUrl || !coords || restaurantMail || userId
-    //     || !coords.latitude || !coords.longitude || !coords.address || !coords.title) {
-    //     return res.status(400).json({ status: false, message: "You have a missing field" });
-    // };
+    const { title, userId } = req.body;
+    
     try {
-
-        const existingRestaurant = await Restaurant.findOne({ $or: [{ userId }, { title }] });
+        // Sequelize: Use Op.or to check for existing restaurant by userId OR title
+        const existingRestaurant = await Restaurant.findOne({
+            where: {
+                [Op.or]: [
+                    { userId: userId },
+                    { title: title }
+                ]
+            }
+        });
 
         if (existingRestaurant) {
-            if (existingRestaurant.userId.toString() === userId) {
-                return res.status(400).json({ status: false, message: "User already has a restaurant" });
+            // Sequelize uses strict equality (===) for numbers, so no .toString() is needed
+            if (existingRestaurant.userId = userId) {
+                return res.status(409).json({ status: false, message: "User already has a restaurant" }); // 409 Conflict
             } else if (existingRestaurant.title === title) {
-                return res.status(400).json({ status: false, message: "A restaurant with this title already exists" });
+                return res.status(409).json({ status: false, message: "A restaurant with this title already exists" });
             }
         }
-        const newRestaurant = new Restaurant(req.body);
-        await newRestaurant.save();
+        
+        // --- Prepare data for creation ---
+        // Flatten the coords object and rename coords.title to addressTitle
+        const restaurantData = {
+            ...req.body,
+            latitude: req.body.latitude,
+            longitude: req.body.longitude,
+            latitudeDelta: req.body.latitudeDelta,
+            longitudeDelta: req.body.longitudeDelta,
+            address: req.body.address,
+            addressTitle: req.body.title, // Renamed field
+        };
+        delete restaurantData.coords; // Remove the original coords object
+
+        // Sequelize: Use .create() to add the new restaurant
+        const newRestaurant = await Restaurant.create(restaurantData);
+
+        // Send back a clean, formatted response
         res.status(201).json({
-            status: true, message: "Restaurant added Successfully", newRestaurant: {
-                restaurantId: newRestaurant._id,
+            status: true,
+            message: "Restaurant added Successfully",
+            restaurant: { // Renamed from newRestaurant to restaurant for clarity
+                restaurantId: newRestaurant.id, // Use .id in Sequelize
                 title: newRestaurant.title,
                 rating: newRestaurant.rating,
-                address: newRestaurant.coords.address,
+                address: newRestaurant.address,
                 verification: newRestaurant.verification,
                 code: newRestaurant.code
             }
         });
     } catch (error) {
-        res.status(500).json({ status: false, message: error.message });
+        res.status(500).json({ status: false, message: "Failed to add restaurant.", error: error.message });
     }
 }
+
 
 async function getRestaurantById(req, res) {
-    const id = req.params.id;
+    const { id } = req.params;
     try {
-        const restaurants = await Restaurant.findById(id)
-        res.status(200).json(restaurants);
+        // Sequelize: .findByPk is the direct equivalent of .findById
+        const restaurant = await Restaurant.findByPk(id);
+
+        if (!restaurant) {
+            return res.status(404).json({ status: false, message: "Restaurant not found." });
+        }
+        res.status(200).json(restaurant);
     } catch (error) {
-        res.status(500).json({ status: false, message: error.message });
+        res.status(500).json({ status: false, message: "Failed to get restaurant.", error: error.message });
     }
 }
+
 
 async function getRestaurantByUser(req, res) {
-    const userId = req.params.userId;
+    const { userId } = req.params;
 
     try {
-        const restaurant = await Restaurant.findOne({ userId: userId });
+        // Sequelize: .findOne({ where: ... }) is the equivalent
+        const restaurant = await Restaurant.findOne({ where: { userId: userId } });
         if (!restaurant) {
-            return res.status(404).json({ status: false, message: "Restaurant not found" });
+            return res.status(404).json({ status: false, message: "Restaurant not found for this user." });
         }
         res.status(200).json(restaurant);
     } catch (error) {
-        res.status(500).json({ status: false, message: error.message });
+        res.status(500).json({ status: false, message: "Failed to get restaurant.", error: error.message });
     }
 }
+
 
 async function getRestaurantbyUserId(req, res) {
-    const userId = req.user.id;
+    const userId = req.user.id; // From middleware
     try {
-        const restaurant = await Restaurant.find({ userId: userId })
+        // Your Mongoose code used .find which returns an array.
+        // The equivalent is .findAll(). However, since a user can only have one restaurant
+        // (due to the UNIQUE constraint on userId), .findOne() is more correct here.
+        const restaurant = await Restaurant.findOne({ where: { userId: userId } });
 
         if (!restaurant) {
-            return res.status(404).json({ status: false, message: "Restaurant not found" });
+            // Sending an empty object or a specific message is a design choice.
+            // 404 is appropriate if a restaurant is expected.
+            return res.status(404).json({ status: false, message: "Restaurant not found for this user." });
         }
         res.status(200).json(restaurant);
     } catch (error) {
-        return res.status(500).json({ status: false, message: error.message });
+        res.status(500).json({ status: false, message: "Failed to get restaurant.", error: error.message });
     }
 }
 
+
 async function getRandomRestaurant(req, res) {
-    const code = req.params.code;
+    const { code } = req.params;
     try {
-        let randomRestaurant = [];
+        let randomRestaurants = []; // Renamed for clarity
 
         if (code) {
-            randomRestaurant = await Restaurant.aggregate([
-                { $match: { code } },
-                { $sample: { size: 20 } }
-            ]);
-        };
-        if (randomRestaurant.length === 0) {
-            randomRestaurant = await Restaurant.aggregate([
-                { $match: { isAvailable: true } },
-                { $sample: { size: 5 } }
-            ]);
-        };
-        res.status(200).json(randomRestaurant);
+            // Find random restaurants matching the code
+            randomRestaurants = await Restaurant.findAll({
+                where: { code: code },
+                order: sequelize.random(),
+                limit: 20
+            });
+        }
+        
+        // If the first search yielded no results, do the fallback search
+        if (randomRestaurants.length === 0) {
+            randomRestaurants = await Restaurant.findAll({
+                where: { isAvailabe: true }, // Note the typo 'isAvailabe' from your model
+                order: sequelize.random(),
+                limit: 5
+            });
+        }
+        
+        res.status(200).json(randomRestaurants);
     } catch (error) {
-        res.status(500).json({ status: false, message: error.message });
+        res.status(500).json({ status: false, message: "Failed to get random restaurants.", error: error.message });
     }
 }
 
 async function getAllNearbyRestaurant(req, res) {
-    const code = req.params.code;
+    const { code } = req.params;
     try {
         let allNearbyRestaurants = [];
 
         if (code) {
-            allNearbyRestaurants = await Restaurant.aggregate([
-                { $match: { code } },
-
-            ]);
-        };
-        if (allNearbyRestaurants.length === 0) {
-            allNearbyRestaurants = await Restaurant.aggregate([
-                { $match: { isAvailable: true } },
-
-            ]);
+            // Find all restaurants matching the code
+            allNearbyRestaurants = await Restaurant.findAll({
+                where: { code: code }
+            });
         }
-
+        
+        // If no code was provided or no restaurants matched, fall back
+        if (allNearbyRestaurants.length === 0) {
+            allNearbyRestaurants = await Restaurant.findAll({
+                where: { isAvailabe: true } // Note the typo 'isAvailabe' from your model
+            });
+        }
 
         res.status(200).json(allNearbyRestaurants);
     } catch (error) {
-        res.status(500).json({ status: false, message: error.message });
+        res.status(500).json({ status: false, message: "Failed to get nearby restaurants.", error: error.message });
     }
 }
+
 
 async function restaurantAvailability(req, res) {
     try {
-        const restaurantId = req.params.id;
-        const restaurant = await Restaurant.findById(restaurantId);
+        const { id } = req.params; // Renamed from restaurantId for clarity
+        const restaurant = await Restaurant.findByPk(id);
 
         if (!restaurant) {
-            return res.status(404).send({ message: 'Restaurant not found' });
+            return res.status(404).json({ status: false, message: 'Restaurant not found' });
         }
+        
+        // Toggle the value and update the record
+        const updatedRestaurant = await restaurant.update({
+            // Use the exact field name from your model, including the typo
+            isAvailabe: !restaurant.isAvailabe 
+        });
 
-        restaurant.isAvailabe = !restaurant.isAvailabe;
-
-        const updatedRestaurant = await Restaurant.findByIdAndUpdate(
-            restaurantId,
-            { isAvailabe: restaurant.isAvailabe },
-            { new: true, runValidators: true }
-        );
-
-        res.status(200).send(updatedRestaurant);
+        res.status(200).json(updatedRestaurant);
     } catch (error) {
-        res.status(500).send({ message: 'Internal server error', error })
+        res.status(500).json({ status: false, message: 'Failed to update availability.', error: error.message });
     }
 }
 
+
 async function getPopularRestaurant(req, res) {
     try {
-        let popularRestaurants = [];
-        popularRestaurants = await Restaurant.aggregate([
-            { $match: { isAvailabe: true } },
-            { $sort: { rating: -1 } },
-            { $limit: 30 }
-        ]);
+        popularRestaurants = []
+        popularRestaurants = await Restaurant.findAll({
+            where: { isAvailabe: true },
+            order: [
+                ['rating', 'DESC'] // Order by the 'rating' column in descending order
+            ],
+            limit: 30
+        })
+
+        if(popularRestaurants.length === 0) {
+            popularRestaurants = await Restaurant.findAll({
+                where: { isAvailabe: true }, // Note the typo 'isAvailabe' from your model
+                order: sequelize.random(),
+                limit: 5
+            })
+        }
 
         res.status(200).json(popularRestaurants);
     } catch (err) {
         console.error('Error fetching popular restaurants:', err);
-        res.status(500).json({ error: 'Failed to fetch popular restaurants' });
+        res.status(500).json({ status: false, message: 'Failed to fetch popular restaurants.', error: err.message });
     }
 };
 
 
 async function addTimeToRestaurant(req, res) {
-
     try {
-        const  id  = req.params.id; // Get restaurantId from URL params
+        const { id } = req.params; // The restaurant's primary key
         const { orderType, day, open, close, orderCutOffTime, menuReadyTime } = req.body;
 
         if (!orderType || !day || !open || !close) {
             return res.status(400).json({
-                success: false,
+                status: false, // Changed success to status for consistency
                 message: 'Missing required fields: orderType, day, open, close.',
             });
         }
-        const restaurant = await Restaurant.findById(id)
+        
+        const restaurant = await Restaurant.findByPk(id);
+        
         if (!restaurant) {
             return res.status(404).json({
-                success: false,
+                status: false,
                 message: 'Restaurant not found.',
             });
         }
-        restaurant.time = [];
+        
+        // Prepare the new time entry
         const newTimeEntry = {
             orderType,
             day,
@@ -189,64 +247,95 @@ async function addTimeToRestaurant(req, res) {
             orderCutOffTime: orderCutOffTime || null,
             menuReadyTime: menuReadyTime || null,
         };
-        restaurant.time.push(newTimeEntry);
-        await restaurant.save();
+
+        // Sequelize: To replace the array, we simply update the JSON column
+        // with a new array containing only the new entry.
+        await restaurant.update({
+            time: [newTimeEntry] // Overwrite the existing 'time' array
+        });
+
         return res.status(200).json({
-            success: true,
+            status: true,
             message: 'All existing time entries deleted and new time added successfully.',
         });
     } catch (error) {
         console.error(error);
         return res.status(500).json({
-            success: false,
+            status: false,
             message: 'Server error.',
+            error: error.message
         });
     }
 }
 
 async function updatedRestaurant(req, res) {
-    const { restaurantId } = req.params
+    const { restaurantId } = req.params;
     const updateData = req.body;
-    try {
 
-        const restaurant = await Restaurant.findById(restaurantId);
-        if (!restaurant) {
-            return res.status(404).json({ status: false, message: "Restaurant not found" });
+    // --- Data Preprocessing for Flattened Coords ---
+    // If the incoming data includes a 'coords' object, we must flatten it
+    // to match our database table structure.
+    if (updateData.coords) {
+        updateData.latitude = updateData.coords.latitude;
+        updateData.longitude = updateData.coords.longitude;
+        updateData.latitudeDelta = updateData.coords.latitudeDelta;
+        updateData.longitudeDelta = updateData.coords.longitudeDelta;
+        updateData.address = updateData.coords.address;
+        updateData.addressTitle = updateData.coords.title; // Map to the renamed field
+        delete updateData.coords; // Remove the original object
+    }
+    
+    try {
+        // Sequelize: Use Model.update() to apply the changes
+        const [updatedRows] = await Restaurant.update(updateData, {
+            where: { id: restaurantId }
+        });
+
+        if (updatedRows === 0) {
+            return res.status(404).json({ status: false, message: "Restaurant not found or no new data to update." });
         }
 
-        // Update restaurant with new data
-        const updatedRestaurant = await Restaurant.findByIdAndUpdate(
-            restaurantId,
-            { $set: updateData }, 
-            { new: true, runValidators: true } 
-        );
+        // Fetch the fully updated restaurant to send back in the response
+        const updatedRestaurant = await Restaurant.findByPk(restaurantId);
 
-        res.status(201).json({
+        res.status(200).json({ // Changed to 200 OK
             status: true,
             message: "Restaurant updated successfully",
-            updatedRestaurant
+            restaurant: updatedRestaurant // Renamed for clarity
         });
 
     } catch (error) {
-        res.status(500).json({ status: false, message: error.message });
+        res.status(500).json({ status: false, message: "Failed to update restaurant.", error: error.message });
     }
 }
 
 async function addRestuarantAccountDetails(req, res) {
-    const { restaurantId, accountName, accountNumber, bank } = req.body;
+    // The restaurantId should be a URL parameter for a specific resource
+    const { restaurantId } = req.params; 
+    const { accountName, accountNumber, bank } = req.body;
 
     try {
-        if (!restaurantId) {
-            return res.status(400).json({ status: false, message: "Restaurant Id required" })
+        if (!accountName || !accountNumber || !bank) {
+            return res.status(400).json({ status: false, message: "Account Name, Number, and Bank are required." });
         }
-        const accountDetails = await Restaurant.findByIdAndUpdate(restaurantId, { accountName: accountName, accountNumber: accountNumber, bank: bank }, { new: true })
-        if (!accountDetails) {
-            return res.status(404).json({ status: false, message: "Restaurant not found" })
-        }
-        return res.status(200).json(accountDetails)
-    } catch (error) {
-        return res.status(500).json({ status: false, message: error.message })
+        
+        const [updatedRows] = await Restaurant.update({
+            accountName,
+            accountNumber,
+            bank
+        }, {
+            where: { id: restaurantId }
+        });
 
+        if (updatedRows === 0) {
+            return res.status(404).json({ status: false, message: "Restaurant not found." });
+        }
+        
+        const updatedRestaurant = await Restaurant.findByPk(restaurantId);
+        return res.status(200).json(updatedRestaurant);
+
+    } catch (error) {
+        return res.status(500).json({ status: false, message: "Failed to add account details.", error: error.message });
     }
 }
 

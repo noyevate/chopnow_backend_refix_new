@@ -1,101 +1,157 @@
-const Food = require("../models/Food");
-const Restaurant = require("../models/Restaurant");
-const Additives = require('../models/Additive');
-const Packs = require('../models/Pack');
-const mongoose = require('mongoose');
+// const Food = require("../models/Food");
+// const Restaurant = require("../models/restaurant");
+// const Additives = require('../models/Additive');
+// const Packs = require('../models/Pack');
+// const mongoose = require('mongoose');
+
+const { Food, Restaurant, Additive, Pack } = require("../models"); 
+const sequelize = require('../config/database');
+const { Op } = require("sequelize");
 
 
+// In controllers/foodController.js
 async function addFood(req, res) {
-    const { title, foodTags, category, restaurant_category, code, restaurant, description, time, price, additive, imageUrl } = req.body;
-    if (!title || !foodTags || !category || !code || !restaurant || !description || !time || !price || !additive || !imageUrl || !restaurant_category) {
-        return res.status(400).json({ status: false, message: "You have a missing field" });
+    // 1. Destructure ONLY the fields you expect and need from the request body.
+    const {
+        title,
+        time,
+        foodTags,
+        categoryId,
+        foodType,
+        code,
+        isAvailable,
+        restaurantId,
+        rating,
+        ratingCount,
+        description,
+        price,
+        priceDescription,
+        additive,
+        pack,
+        imageUrl,
+        restaurant_category
+    } = req.body;
+
+    // 2. Validate the required fields.
+    if (!title || !restaurantId || !categoryId) {
+        return res.status(400).json({ status: false, message: "Title, Restaurant ID, and Category ID are required." });
     }
 
     try {
-        // Add food
-        const newFood = new Food(req.body);
-        await newFood.save();
+        const result = await sequelize.transaction(async (t) => {
+            // 3. Build a clean data object with only the allowed fields.
+            // This prevents any unwanted fields (like 'userId') from being passed to .create()
+            const foodData = {
+                title,
+                time,
+                foodTags,
+                categoryId,
+                foodType,
+                code,
+                isAvailable,
+                restaurantId,
+                rating,
+                ratingCount,
+                description,
+                price,
+                priceDescription,
+                additive,
+                pack,
+                imageUrl,
+                restaurant_category
+            };
 
-        // Update restaurant categories
-        const restaurantDoc = await Restaurant.findById(restaurant);
-        if (restaurantDoc) {
-            const categoryIndex = restaurantDoc.restaurant_categories.findIndex(cat => cat.name === restaurant_category);
-            if (categoryIndex === -1) {
-                // Category not found, add new
-                restaurantDoc.restaurant_categories.push({
-                    name: restaurant_category,
-                    additives: additive // Adding additives to category
-                });
-            } else {
-                // Category found, update additives
-                restaurantDoc.restaurant_categories[categoryIndex].additives = Array.from(new Set([
-                    ...restaurantDoc.restaurant_categories[categoryIndex].additives,
-                    ...additive
-                ]));
+            const newFood = await Food.create(foodData, { transaction: t });
+            
+            // --- Logic to update the restaurant (remains the same) ---
+            const restaurantDoc = await Restaurant.findByPk(restaurantId, { transaction: t });
+            if (restaurantDoc) {
+                let categories = restaurantDoc.restaurant_categories || [];
+                const categoryIndex = categories.findIndex(cat => cat.name === restaurant_category);
+                if (categoryIndex === -1) {
+                    categories.push({ name: restaurant_category, additives: additive });
+                } else {
+                    const existingAdditives = new Set(categories[categoryIndex].additives);
+                    additive.forEach(add => existingAdditives.add(add));
+                    categories[categoryIndex].additives = Array.from(existingAdditives);
+                }
+                await restaurantDoc.update({ restaurant_categories: categories }, { transaction: t });
             }
-            restaurantDoc.foods.push(newFood._id);
-            await restaurantDoc.save();
-        }
+            // --- End restaurant update logic ---
 
-        res.status(201).json({ status: true, message: "Food has been added successfully" });
+            return newFood;
+        });
+
+        res.status(201).json({ status: true, message: "Food has been added successfully", food: result });
+
     } catch (error) {
-        res.status(500).json({ status: false, message: error.message });
+        res.status(500).json({ status: false, message: "Failed to add food.", error: error.message });
     }
 }
+
 async function getFoodById(req, res) {
-    const id = req.params.id;
+    const { id } = req.params;
     try {
-        const food = await Food.findById(id).lean(); // Using lean() to return a plain JavaScript object
+        // Sequelize: .findByPk is the direct equivalent of .findById
+        const food = await Food.findByPk(id);
+        
         if (!food) {
             return res.status(404).json({ status: false, message: 'Food not found' });
         }
         res.status(200).json(food);
     } catch (error) {
-        res.status(500).json({ status: false, message: error.message });
+        res.status(500).json({ status: false, message: "Failed to get food.", error: error.message });
     }
 }
 
 async function getRandomFood(req, res) {
-    const code = req.params.code
+    const { code } = req.params;
     try {
-        let randomFoodList = []
-        // check if code is provided in the params
+        let randomFoodList = [];
+        
         if (code) {
-            randomFoodList = await Food.aggregate([
-                { $match: { code } },
-                { $sample: { size: 6 } }
-            ])
+            // Find random food items matching the code
+            randomFoodList = await Food.findAll({
+                where: { code: code },
+                order: sequelize.random(),
+                limit: 6
+            });
         }
 
-        //if no code provided matches
-
-        if (!randomFoodList.length) {
-            randomFoodList = await Food.aggregate([
-                { $sample: { size: 3 } }
-            ])
+        // If the first search yielded no results (or no code was provided), run the fallback
+        if (randomFoodList.length === 0) {
+            randomFoodList = await Food.findAll({
+                order: sequelize.random(),
+                limit: 3
+            });
         }
 
-        //respond ith the result
-
-        if (randomFoodList.length) {
-            res.status(200).json(randomFoodList)
+        if (randomFoodList.length > 0) {
+            res.status(200).json(randomFoodList);
         } else {
             res.status(404).json({ status: false, message: "No food found" });
         }
     } catch (error) {
-        res.status(500).json({ status: false, message: error.message });
+        res.status(500).json({ status: false, message: "Failed to get random food.", error: error.message });
     }
 }
 
 
 // Restaurant Menu
+
 async function getFoodsByRestaurant(req, res) {
-    const id = req.params.id
+    const { id } = req.params; // This is the restaurantId
     try {
-        const foods = await Food.find({ restaurant: id });
+        // Sequelize: .findAll({ where: ... }) is the equivalent of .find({ ... })
+        const foods = await Food.findAll({
+            where: { restaurantId: id }
+        });
+        
+        // It's standard to return an empty array if no foods are found.
         res.status(200).json(foods);
+
     } catch (error) {
-        res.status(500).json({ status: false, message: error.message });
+        res.status(500).json({ status: false, message: "Failed to get restaurant foods.", error: error.message });
     }
 }
 
@@ -104,65 +160,58 @@ async function getFoodByCategoryAndCode(req, res) {
     const { category, code } = req.params;
 
     try {
-        const foods = await Food.aggregate([
-            { $match: { category: category, code: code } },
+        const foods = await Food.findAll({
+            where: {
+                categoryId: category, // Use the correct foreign key name
+                code: code
+            }
+        });
 
-        ]);
-        if (foods.length === 0) {
-            console.log()
-            res.status(200).json([]);
-        } else {
-            res.status(200).json(foods)
-        }
+        
+        res.status(200).json(foods);
+        
     } catch (error) {
-        res.status(500).json({ status: false, message: error.message });
+        res.status(500).json({ status: false, message: "Failed to get food by category/code.", error: error.message });
     }
 }
 
-async function getallFoodsByCodee(req, res) {
-    const code = req.params.code;
+async function getAllFoodsByCode(req, res) { // Renamed for clarity
+    const { code } = req.params;
     try {
-        const foodList = await Food.find({ code: code });
-        return res.status(200).json(foodList)
-    } catch (error) {
-        return res.status(500).json({ status: false, message: error.message })
-    }
+        const foodList = await Food.findAll({
+            where: { code: code }
+        });
+        
+        return res.status(200).json(foodList);
 
+    } catch (error) {
+        return res.status(500).json({ status: false, message: "Failed to get all foods by code.", error: error.message });
+    }
 }
 
 async function searchFoodAndRestaurant(req, res) {
-    const search = req.params.search;
+    const { search } = req.params;
 
     try {
-        // Search in Food collection
-        const foodResults = await Food.aggregate([
-            {
-                $search: {
-                    index: "foods",
-                    text: {
-                        query: search,
-                        path: {
-                            wildcard: "*"
-                        }
-                    }
+        // Search for foods where the title is LIKE the search term
+        const foodResults = await Food.findAll({
+            where: {
+                title: {
+                    [Op.like]: `%${search}%` // Corresponds to: LIKE '%search_term%'
                 }
-            }
-        ]);
+            },
+            limit: 10 // It's a good practice to limit search results
+        });
 
-        // Search in Restaurant collection
-        const restaurantResults = await Restaurant.aggregate([
-            {
-                $search: {
-                    index: "restaurants",
-                    text: {
-                        query: search,
-                        path: {
-                            wildcard: "*"
-                        }
-                    }
+        // Search for restaurants where the title is LIKE the search term
+        const restaurantResults = await Restaurant.findAll({
+            where: {
+                title: {
+                    [Op.like]: `%${search}%`
                 }
-            }
-        ]);
+            },
+            limit: 10
+        });
 
         // Combine the results
         const results = {
@@ -172,401 +221,456 @@ async function searchFoodAndRestaurant(req, res) {
 
         res.status(200).json(results);
     } catch (error) {
-        res.status(500).json({ status: false, message: error.message });
+        res.status(500).json({ status: false, message: "Search failed.", error: error.message });
     }
 }
 
 
 async function searchFood(req, res) {
-    const search = req.params.search;
+    const { search } = req.params;
 
     try {
-        const results = await Food.aggregate([
-            {
-                $search: {
-                    index: "foods",
-                    text: {
-                        query: search,
-                        path: {
-                            wildcard: "*"
-                        }
-                    }
+        const results = await Food.findAll({
+            where: {
+                title: {
+                    [Op.like]: `%${search}%`
                 }
-            }
-        ])
+            },
+            limit: 20 // Limit the results
+        });
 
         res.status(200).json(results);
     } catch (error) {
-        res.status(500).json({ status: false, message: error.message });
+        res.status(500).json({ status: false, message: "Food search failed.", error: error.message });
     }
 }
 
 async function getRandomFoodByCodeAndCategory(req, res) {
     const { category, code } = req.params;
     try {
-        let foods;
-        foods = await Food.aggregate([
-            { $match: { category, code } },
-            { $sample: { size: 3 } }
-        ])
+        let foods = [];
 
-        if (foods.length === 0) {
-            foods = await Food.aggregate([
-                { $match: { code } },
-                { $sample: { size: 3 } }
-            ]);
+        // 1. First, try to find by both categoryId and code
+        if (category && code) {
+            foods = await Food.findAll({
+                where: { categoryId: category, code: code },
+                order: sequelize.random(),
+                limit: 3
+            });
         }
-        if (foods.length === 0) {
-            foods = await Food.aggregate([
-                { $match: { isAvailable: true } },
-                { $sample: { size: 3 } }
-            ]);
+
+        // 2. If nothing was found, fall back to searching by code only
+        if (foods.length === 0 && code) {
+            foods = await Food.findAll({
+                where: { code: code },
+                order: sequelize.random(),
+                limit: 3
+            });
         }
-        res.status(200).json(food);
+        
+        // 3. If still nothing was found, fall back to any available food
+        if (foods.length === 0) {
+            foods = await Food.findAll({
+                where: { isAvailable: true },
+                order: sequelize.random(),
+                limit: 3
+            });
+        }
+        
+        // Your original code had a typo here, returning 'food' instead of 'foods'
+        res.status(200).json(foods);
+
     } catch (error) {
-        res.status(500).json({ status: false, message: error.message });
+        res.status(500).json({ status: false, message: "Failed to get random food.", error: error.message });
     }
 }
-
-
 
 
 const getFoodByCategory = async (req, res) => {
     const { restaurantId, category } = req.params;
 
     try {
-        // Find foods matching the restaurantId and category
-        const foodList = await Food.aggregate([
-            {
-                $match: {
-                    restaurant: new mongoose.Types.ObjectId(restaurantId),
-                    restaurant_category: category
-                }
+        const foodList = await Food.findAll({
+            where: {
+                restaurantId: restaurantId,
+                restaurant_category: category // This is the string category defined by the restaurant
             },
-            { $sample: { size: 50 } } // Sample 6 foods; adjust as needed
-        ]);
+            order: sequelize.random(),
+            limit: 50
+        });
 
-        // Respond with the result
-        if (foodList.length) {
+        if (foodList.length > 0) {
             res.status(200).json(foodList);
         } else {
             res.status(404).json({ status: false, message: "No food found for this restaurant and category" });
         }
     } catch (error) {
-        res.status(500).json({ status: false, message: error.message });
+        res.status(500).json({ status: false, message: "Failed to get food by category.", error: error.message });
     }
 };
 
+
+
 async function searchRestaurantFood(req, res) {
+    // This function now uses req.params, but query params are more flexible for search.
+    // Sticking to your structure for now.
     const { restaurantCategory, title, restaurant } = req.query;
 
-    // Convert restaurant to ObjectId if it's a string representation
-    const restaurantId = mongoose.Types.ObjectId.isValid(restaurant) ? new mongoose.Types.ObjectId(restaurant) : null;
-
-    if (!restaurantId) {
-        return res.status(400).json({ status: false, message: "Invalid restaurant ID" });
+    if (!restaurant) {
+        return res.status(400).json({ status: false, message: "Restaurant ID is required." });
     }
 
     try {
-        // Build the match criteria
-        const matchCriteria = { restaurant: restaurantId };
+        // Build the where clause dynamically
+        const whereClause = { restaurantId: restaurant };
 
         if (restaurantCategory) {
-            matchCriteria.restaurant_category = restaurantCategory;
+            whereClause.restaurant_category = restaurantCategory;
         }
         if (title) {
-            matchCriteria.title = { $regex: title, $options: 'i' }; // Case-insensitive search
+            whereClause.title = { [Op.like]: `%${title}%` }; // Case-insensitive by default in MySQL
         }
 
-        // Fetch data
-        const foodList = await Food.find(matchCriteria).lean().exec();
+        const foodList = await Food.findAll({ where: whereClause });
 
         if (foodList.length > 0) {
             res.status(200).json(foodList);
         } else {
-            res.status(404).json({ status: false, message: "No food found" });
+            // It's often better to return an empty array for a search
+            res.status(200).json([]);
         }
     } catch (error) {
-        res.status(500).json({ status: false, message: error.message });
+        res.status(500).json({ status: false, message: "Failed to search for food.", error: error.message });
     }
 }
+
 
 async function fetchRestaurantCategories(req, res) {
     const { restaurantId } = req.params;
 
     try {
-        // Convert restaurantId to ObjectId
-        // const objectId = mongoose.Types.ObjectId(restaurantId);
+        const categories = await Food.findAll({
+            where: { restaurantId: restaurantId },
+            attributes: ['restaurant_category'], // Select only the category field
+            group: ['restaurant_category']       // Group by it to get unique values
+        });
 
-        // Find distinct restaurant categories for the restaurant
-        const categories = await Food.find({ restaurant: restaurantId }).distinct('restaurant_category');
+        // The result is an array of objects, e.g., [{ restaurant_category: 'Pizza' }, ...].
+        // We map it to a simple array of strings to match the original Mongoose output.
+        const categoryNames = categories.map(c => c.restaurant_category);
 
-        // Return the categories as a response
-        return res.status(200).json(categories);
+        return res.status(200).json(categoryNames);
     } catch (error) {
-        console.error("Error fetching restaurant categories: ", error);
-
-        // Return an error response
-        return res.status(500).json({ message: "Server error", error });
+        return res.status(500).json({ status: false, message: "Failed to fetch restaurant categories.", error: error.message });
     }
 }
 
 async function fetchFoodByCategory(req, res) {
-    const { category } = req.params;
-    console.log('Category ID:', category);
+    const { category } = req.params; // This is now the categoryId
 
     try {
-        // Find foods by category
-        const foods = await Food.find({ category });
-
-        if (!foods.length) {
-            return res.status(200).json([]); // Return empty array if no foods found
-        }
-
-        // Manually include the __v field in each document
-        const foodsWithVersion = foods.map(food => {
-            const foodObj = food.toObject(); // Convert Mongoose document to plain object
-            foodObj.__v = food.__v; // Manually add __v back to the object
-            return foodObj;
+        const foods = await Food.findAll({
+            where: { categoryId: category } // Use the correct foreign key name
         });
 
-        return res.status(200).json(foodsWithVersion); // Return foods including __v
+        // Sequelize models are clean JSON when sent in a response, no __v or .toObject() needed.
+        return res.status(200).json(foods);
+
     } catch (error) {
-        console.error('Error fetching foods by category:', error);
-        return res.status(500).json({ message: 'Error fetching foods by category.', error: error.message });
+        return res.status(500).json({ status: false, message: 'Error fetching foods by category.', error: error.message });
     }
 }
+
 
 async function fetchRestaurantAdditives(req, res) {
     const { restaurantId } = req.params;
 
     try {
-        // Convert restaurantId to ObjectId
-        // const objectId = mongoose.Types.ObjectId(restaurantId);
+        // 1. Fetch all food items for the restaurant, selecting only the 'additive' field for efficiency.
+        const foods = await Food.findAll({
+            where: { restaurantId: restaurantId },
+            attributes: ['additive']
+        });
 
-        // Find distinct restaurant categories for the restaurant
-        console.log('restaurantId ID:', restaurantId);
-        const additives = await Food.find({ restaurant: restaurantId }).distinct('additive');
+        // 2. Process the results in JavaScript to get a unique list.
+        const allAdditives = new Set(); // Use a Set for automatic de-duplication
 
-        // Return the categories as a response
-        return res.status(200).json(additives);
+        foods.forEach(food => {
+            if (food.additive && Array.isArray(food.additive)) {
+                food.additive.forEach(additive => {
+                    // You might need to decide what makes an additive unique.
+                    // If it's an object, stringifying is a simple way.
+                    allAdditives.add(JSON.stringify(additive));
+                });
+            }
+        });
+
+        // 3. Convert the Set of strings back into an array of objects.
+        const uniqueAdditives = Array.from(allAdditives).map(item => JSON.parse(item));
+
+        return res.status(200).json(uniqueAdditives);
     } catch (error) {
-        console.error("Error fetching restaurant additives: ", error);
-
-        // Return an error response
-        return res.status(500).json({ message: "Server error", error });
+        return res.status(500).json({ status: false, message: "Failed to fetch restaurant additives.", error: error.message });
     }
 }
 
 
 
 
+
+
+// async function filteredFoodByRestaurantCategory(req, res) {
+//     const { restaurantId } = req.params;
+//     console.log("Received restaurantId:", restaurantId); // Debugging line
+
+
+//     // Validate the restaurantId format
+//     if (!mongoose.Types.ObjectId.isValid(restaurantId)) {
+//         return res.status(400).json({ message: "Invalid restaurant ID format." });
+//     }
+
+//     try {
+//         const foods = await Food.aggregate([
+//             // Match by restaurant ID
+//             { $match: { restaurant: new mongoose.Types.ObjectId(restaurantId) } },
+
+//             // Group by restaurant_category and restaurantCategoryAvailable
+//             {
+
+//                 $group: {
+//                     _id: {
+//                         restaurant_category: "$restaurant_category",
+//                         restaurantCategoryAvailable: "$restaurantCategoryAvailable"
+//                     },
+//                     items: {
+//                         $push: {
+//                             _id: "$_id",
+//                             title: "$title",
+//                             time: "$time",
+//                             foodTags: "$foodTags",
+//                             category: "$category",
+//                             foodType: "$foodType",
+//                             code: "$code",
+//                             isAvailable: "$isAvailable",
+//                             restaurant: "$restaurant",
+//                             rating: "$rating",
+//                             ratingCount: "$ratingCount",
+//                             description: "$description",
+//                             price: "$price",
+//                             priceDescription: "$priceDescription",
+//                             additive: "$additive",
+//                             pack: "$pack",
+//                             imageUrl: "$imageUrl"
+//                         }
+//                     }
+//                 }
+//             },
+//             {
+//                 $project: {
+//                     _id: 0,  // Exclude the default _id field generated by MongoDB
+//                     restaurant_category: "$_id.restaurant_category",
+//                     restaurantCategoryAvailable: "$_id.restaurantCategoryAvailable",
+//                     items: 1
+//                 }
+//             }
+//         ]);
+
+//         // Send the formatted response
+//         res.status(200).json(foods);
+//     } catch (error) {
+//         console.error("Error fetching food by restaurant and category:", error);
+//         res.status(500).json({ message: "An error occurred while fetching food data." });
+//     }
+// }
 
 
 async function filteredFoodByRestaurantCategory(req, res) {
     const { restaurantId } = req.params;
-    console.log("Received restaurantId:", restaurantId); // Debugging line
-
-
-    // Validate the restaurantId format
-    if (!mongoose.Types.ObjectId.isValid(restaurantId)) {
-        return res.status(400).json({ message: "Invalid restaurant ID format." });
-    }
 
     try {
-        const foods = await Food.aggregate([
-            // Match by restaurant ID
-            { $match: { restaurant: new mongoose.Types.ObjectId(restaurantId) } },
+        // Step 1: Fetch all food items for the given restaurant.
+        const foods = await Food.findAll({
+            where: { restaurantId: restaurantId }
+        });
 
-            // Group by restaurant_category and restaurantCategoryAvailable
-            {
-
-                $group: {
-                    _id: {
-                        restaurant_category: "$restaurant_category",
-                        restaurantCategoryAvailable: "$restaurantCategoryAvailable"
-                    },
-                    items: {
-                        $push: {
-                            _id: "$_id",
-                            title: "$title",
-                            time: "$time",
-                            foodTags: "$foodTags",
-                            category: "$category",
-                            foodType: "$foodType",
-                            code: "$code",
-                            isAvailable: "$isAvailable",
-                            restaurant: "$restaurant",
-                            rating: "$rating",
-                            ratingCount: "$ratingCount",
-                            description: "$description",
-                            price: "$price",
-                            priceDescription: "$priceDescription",
-                            additive: "$additive",
-                            pack: "$pack",
-                            imageUrl: "$imageUrl"
-                        }
-                    }
-                }
-            },
-            {
-                $project: {
-                    _id: 0,  // Exclude the default _id field generated by MongoDB
-                    restaurant_category: "$_id.restaurant_category",
-                    restaurantCategoryAvailable: "$_id.restaurantCategoryAvailable",
-                    items: 1
-                }
+        // Step 2: Group the results in JavaScript using .reduce()
+        const groupedByCategory = foods.reduce((acc, food) => {
+            // Create a unique key for each group
+            const key = food.restaurant_category;
+            
+            // If this is the first time we see this category, create the group
+            if (!acc[key]) {
+                acc[key] = {
+                    restaurant_category: food.restaurant_category,
+                    restaurantCategoryAvailable: food.restaurantCategoryAvailable,
+                    items: []
+                };
             }
-        ]);
+            
+            // Push the current food item into its group
+            acc[key].items.push(food);
+            
+            return acc;
+        }, {});
 
-        // Send the formatted response
-        res.status(200).json(foods);
+        // Step 3: Convert the grouped object back into an array
+        const result = Object.values(groupedByCategory);
+
+        res.status(200).json(result);
     } catch (error) {
         console.error("Error fetching food by restaurant and category:", error);
-        res.status(500).json({ message: "An error occurred while fetching food data." });
+        res.status(500).json({ status: false, message: "An error occurred while fetching food data.", error: error.message });
     }
 }
+
 
 async function restaurantCategoryAvailability(req, res) {
     const { restaurantId, restaurant_category } = req.params;
 
     try {
-        // Convert restaurantId to an ObjectId
-        const objectId = new mongoose.Types.ObjectId(restaurantId);
-
-        // Find a food item with the specified category to get the current availability status
+        // Step 1: Find a single food item to determine the *current* availability
         const foodItem = await Food.findOne({
-            restaurant: objectId,
-            restaurant_category: restaurant_category
+            where: {
+                restaurantId: restaurantId,
+                restaurant_category: restaurant_category
+            }
         });
 
         if (!foodItem) {
             return res.status(404).json({
+                status: false,
                 message: "No food items found for the specified restaurant and category."
             });
         }
 
-        // Toggle the current value of restaurantCategoryAvailable
+        // Step 2: Toggle the value
         const newAvailabilityStatus = !foodItem.restaurantCategoryAvailable;
 
-        // Update all food items in the category with the new availability status
-        const result = await Food.updateMany(
+        // Step 3: Update all food items that match the criteria
+        const [modifiedCount] = await Food.update(
+            { restaurantCategoryAvailable: newAvailabilityStatus },
             {
-                restaurant: objectId,
-                restaurant_category: restaurant_category
-            },
-            {
-                $set: { restaurantCategoryAvailable: newAvailabilityStatus }
+                where: {
+                    restaurantId: restaurantId,
+                    restaurant_category: restaurant_category
+                }
             }
         );
 
         res.status(200).json({
+            status: true,
             message: `Successfully updated availability for category: ${restaurant_category}`,
             newAvailabilityStatus: newAvailabilityStatus,
-            modifiedCount: result.modifiedCount
+            modifiedCount: modifiedCount
         });
     } catch (error) {
-        console.error("Error toggling category availability:", error);
-        res.status(500).json({ message: "An error occurred while updating category availability." });
+        res.status(500).json({ status: false, message: "An error occurred while updating category availability.", error: error.message });
     }
 };
+
+
 
 async function updateRestaurantCategory(req, res) {
     const { restaurantId, currentCategory, newCategory } = req.params;
 
     try {
-        // Log input parameters
-
-        const objectId = new mongoose.Types.ObjectId(restaurantId);
-
-        // Validate restaurantId as an ObjectId
-        if (!objectId) {
-            return res.status(400).json({ message: "Invalid restaurant ID format." });
-        }
-
-        // Attempt to find matching documents
-        const matchingDocs = await Food.find({
-            restaurant: objectId,
-            restaurant_category: currentCategory,
-        });
-
-        console.log("Matching documents found:", matchingDocs);
-
-        // Check if any documents were found
-        if (matchingDocs.length === 0) {
-            return res.status(404).json({ message: "No matching food items found to update." });
-        }
-
-        // If matching documents found, proceed with the update
-        const result = await Food.updateMany(
+        const [modifiedCount] = await Food.update(
+            { restaurant_category: newCategory }, // The new value to set
             {
-                restaurant: objectId,
-                restaurant_category: currentCategory
-            },
-            {
-                $set: { restaurant_category: newCategory }
+                where: {
+                    restaurantId: restaurantId,
+                    restaurant_category: currentCategory
+                }
             }
         );
-
+        
+        if (modifiedCount === 0) {
+            return res.status(404).json({ status: false, message: "No matching food items found to update." });
+        }
 
         res.status(200).json({
             success: true,
-            message: `${result.modifiedCount} food items updated to new restaurant category.`,
+            message: `${modifiedCount} food items updated to new restaurant category.`
         });
     } catch (error) {
-        console.error("Error during update:", error);
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ status: false, message: "Failed to update restaurant category.", error: error.message });
     }
 }
 
 
 // Fetch food additives
 
-async function fetchAdditivesForSingleFood(req, res) {
-    const { foodId } = req.params; // Get the food ID from the request parameters
+// In controllers/foodController.js
 
+async function fetchAdditivesForSingleFood(req, res) {
+    const { foodId } = req.params;
+    console.log(`--- 1. Received request for foodId: ${foodId} ---`);
     try {
-        // Fetch the food document by its ID
-        const food = await Food.findById(foodId);
+        const food = await Food.findByPk(foodId);
 
         if (!food) {
-            return res.status(404).json({ message: 'Food not found' });
+            console.log("--- 2. Food not found in database. ---");
+            return res.status(404).json({ status: false, message: "Food not found." });
+        }
+        
+        console.log("--- 2. Found food. Checking 'additive' field... ---");
+        // Log the exact content of the additive field as a string
+        console.log("food.additive:", JSON.stringify(food.additive, null, 2));
+
+        if (!food.additive || !Array.isArray(food.additive) || food.additive.length === 0) {
+            console.log("--- 3. 'additive' field is empty or not an array. Returning []. ---");
+            return res.status(200).json([]);
         }
 
-        // Extract additiveIds from the food's additive field
-        const additiveIds = food.additive.map((additive) => additive.additiveId);
+        const additiveIds = food.additive.map(add => add.id);
+        
+        console.log(`--- 3. Extracted these IDs from the JSON: [${additiveIds.join(', ')}] ---`);
 
-        // Fetch additives that match the additiveIds
-        const resolvedAdditives = await Additives.find({ _id: { $in: additiveIds } });
+        const resolvedAdditives = await Additive.findAll({
+            where: {
+                id: { [Op.in]: additiveIds }
+            }
+        });
+        
+        console.log(`--- 4. Final query found ${resolvedAdditives.length} matching additives. ---`);
 
         res.status(200).json(resolvedAdditives);
     } catch (error) {
-        res.status(500).json({ message: `Internal server error: ${error.message}` });
+        console.error("--- !!! ERROR in fetchAdditivesForSingleFood !!! ---", error);
+        res.status(500).json({ status: false, message: "Failed to fetch additives.", error: error.message });
     }
 }
 
 // frt single pack
 
 async function fetchPackForSingleFood(req, res) {
-    const { foodId } = req.params; // Get the food ID from the request parameters
+    const { foodId } = req.params;
 
     try {
-        // Fetch the food document by its ID
-        const food = await Food.findById(foodId);
+        const food = await Food.findByPk(foodId);
+        console.log( `Foooooooooood ${foodId}  ${food}`)
 
-        if (!food) {
-            return res.status(404).json({ message: 'Food not found' });
+        if (!food || !food.pack || food.pack.length === 0) {
+            return res.status(200).json({status: false, message: "No food pack found"}); // Return empty array if no food or packs
         }
 
-        // Extract additiveIds from the food's additive field
-        const packIds = food.pack.map((pack) => pack.packId);
+        // The 'pack' field is a JSON array of objects with IDs
+        const packIds = food.pack.map(p => p.id);
+        console.log( `packIds ${packIds}`)
+        
 
-        // Fetch additives that match the additiveIds
-        const resolvedPacks = await Packs.find({ _id: { $in: packIds } });
+        // Fetch all Pack documents that match the extracted IDs
+        const resolvedPacks = await Pack.findAll({
+            where: {
+                id: {
+                    [Op.in]: packIds
+                }
+            }
+        });
 
         res.status(200).json(resolvedPacks);
     } catch (error) {
-        res.status(500).json({ message: `Internal server error: ${error.message}` });
+        res.status(500).json({ status: false, message: "Failed to fetch packs.", error: error.message });
     }
 }
 
@@ -580,7 +684,7 @@ module.exports = {
     getRandomFood,
     getFoodByCategoryAndCode,
     getFoodsByRestaurant,
-    getallFoodsByCodee,
+    getAllFoodsByCode,
     searchFood,
     getRandomFoodByCodeAndCategory,
     getFoodByCategory,
@@ -595,3 +699,7 @@ module.exports = {
     fetchPackForSingleFood
 
 }
+
+
+
+

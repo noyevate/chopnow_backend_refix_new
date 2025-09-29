@@ -4,6 +4,6 @@ const {verifyTokenAndAuthorization} = require('../middlewares/verifyToken')
 
 router.post("/", othersController.CreateOthers);
 router.get("/", othersController.getLocation)
-router.patch("/location/:minLat/:maxLat/:minLng/:maxLng", othersController.updateLocation)
+router.patch("/location", othersController.updateLocation)
 
 module.exports = router;

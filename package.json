@@ -5,11 +5,13 @@
   "main": "./api/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon ./api/index.js"
+    "start": "nodemon ./api/index.js",
+    "makemigrations": "node ./node_modules/sequelize-auto-migrations/bin/makemigration.js --models-path ./models"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@azure/storage-blob": "^12.28.0",
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.20.2",
     "compression": "^1.7.4",
@@ -21,11 +23,21 @@
     "http": "^0.0.1-security",
     "ioredis": "^5.7.0",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.2.0",
+    "luxon": "^3.7.2",
+    "mysql2": "^3.14.5",
     "nodemailer": "^6.9.14",
     "nodemon": "^3.1.0",
     "redis": "^5.8.1",
+    "rotating-file-stream": "^3.2.7",
+    "sequelize": "^6.37.7",
     "socket.io": "^4.8.1",
-    "twilio": "^5.2.0"
+    "twilio": "^5.2.0",
+    "uuid": "^8.3.2",
+    "winston": "^3.17.0",
+    "winston-azure-blob": "^1.5.0"
+  },
+  "devDependencies": {
+    "sequelize-auto-migrations": "^1.0.3",
+    "sequelize-cli": "^6.6.3"
   }
 }

@@ -1,0 +1,16 @@
+# Environment variables - DO NOT COMMIT
+.env
+
+# Node modules folder - Never commit this
+node_modules
+
+# Log files
+logs/*.log
+*.log
+
+# NPM debug logs
+npm-debug.log*
+
+# Operating system files
+.DS_Store
+Thumbs.db

@@ -1,74 +1,110 @@
-const Rating = require("../models/Rating");
-const Restaurant = require("../models/Restaurant");
-const Order = require("../models/Order");
+// controllers/ratingController.js
+const {Rating, Restaurant, Order} = require("../models");
 
+// Import the sequelize instance to create a transaction
+const sequelize = require('../config/database'); 
 
-async function addRating (req, res) {
-    const { restaurantId, userId, rating, comment, name, orderId } = req.body;
+async function addRating(req, res) {
+    // A transaction ensures that the rating is created AND the restaurant's
+    // average is updated, or neither operation happens.
+    const t = await sequelize.transaction();
 
     try {
-        const newRating = new Rating({
-            restaurant: restaurantId,
-            user: userId,
+        const { restaurantId, userId, rating, comment, name, orderId } = req.body;
+
+        // Optional but good practice: check if a rating for this order already exists
+        // to prevent duplicate ratings from the same order.
+        const order = await Order.findByPk(orderId, { transaction: t });
+        if (order && order.restaurantRating === true) {
+            await t.rollback();
+            return res.status(400).json({ status: false, message: "This order has already been rated." });
+        }
+        
+        // Create the new rating within the transaction
+        const newRating = await Rating.create({
+            restaurantId: restaurantId,
+            userId: userId,
             rating,
             comment,
             name
+        }, { transaction: t });
+
+        // Recalculate the average rating for the restaurant
+        const allRatings = await Rating.findAll({
+            where: { restaurantId: restaurantId }
+        }, { transaction: t });
+
+        const totalRating = allRatings.reduce((acc, rate) => acc + parseFloat(rate.rating), 0);
+        const avgRating = (totalRating / allRatings.length).toFixed(1);
+
+        // Update the restaurant's rating and ratingCount
+        await Restaurant.update({
+            rating: avgRating,
+            ratingCount: allRatings.length.toString() // Keep as string to match model
+        }, {
+            where: { id: restaurantId },
+            transaction: t
         });
-
-        await newRating.save();
-
-        // Recalculate the average rating
-        const ratings = await Rating.find({ restaurant: restaurantId });
-        const totalRating = ratings.reduce((acc, rate) => acc + rate.rating, 0);
-        const avgRating = (totalRating / ratings.length).toFixed(1);
-
-        await Restaurant.findByIdAndUpdate(restaurantId, { rating: avgRating, ratingCount: ratings.length });
-        await Order.findByIdAndUpdate(orderId, {restaurantRating: true})
         
+        // Update the order to mark that the restaurant has been rated
+        await Order.update(
+            { restaurantRating: true },
+            { where: { id: orderId }, transaction: t }
+        );
 
-        res.status(201).send(newRating);
+        // If all operations were successful, commit the transaction
+        await t.commit();
+
+        res.status(201).json(newRating);
+
     } catch (err) {
-        res.status(500).send(err);
+        // If any operation fails, roll back all previous changes in the transaction
+        await t.rollback();
+        res.status(500).json({ status: false, message: "Failed to add rating.", error: err.message });
     }
 };
 
-async function getRestaurant(req, res) {
-    const { restaurantId } = req.query;  // Extract restaurantId from req.query
+async function getRestaurantRatings(req, res) {
+    // The Mongoose version was named getRestaurant, but this is more descriptive.
+    const { restaurantId } = req.params; // Changed to req.params for REST standard
 
     if (!restaurantId) {
-        return res.status(400).send({ message: 'Restaurant ID is required.' });
+        return res.status(400).json({ status: false, message: 'Restaurant ID is required.' });
     }
 
     try {
-        const ratings = await Rating.find({ restaurant: restaurantId });
-        if (ratings.length === 0) {
-            return res.status(404).send({ message: 'No ratings found for this restaurant.' });
-        }
-        res.send(ratings);
+        const ratings = await Rating.findAll({
+            where: { restaurantId: restaurantId }
+        });
+        
+        // It's standard to return an empty array if no ratings are found.
+        res.status(200).json(ratings);
+
     } catch (err) {
-        res.status(500).send(err);
+        res.status(500).json({ status: false, message: "Failed to get ratings.", error: err.message });
     }
 }
 
-
 async function checkUserRating(req, res) {
-    const rating = req.body.ratingType;
-    const product = req.body.product;
+    // This function checks if a specific user has rated a specific restaurant.
+    const { userId, restaurantId } = req.body;
 
     try {
         const existingRating = await Rating.findOne({
-            userId: req.body.userId,
-            product: product,
-            ratingType: rattingType
+            where: {
+                userId: userId,
+                restaurantId: restaurantId
+            }
         });
-        if (exisitingRating) {
-            res.status(200).json({ status: true, message: "Already Rated" })
+
+        if (existingRating) {
+            res.status(200).json({ status: true, message: "You have already rated this restaurant." });
         } else {
-            res.status(200).json({ status: False, message: "Not Rated" })
+            res.status(200).json({ status: false, message: "Not rated yet." });
         }
     } catch (error) {
-        res.status(500).json({ status: false, message: error.message })
+        res.status(500).json({ status: false, message: "Failed to check rating.", error: error.message });
     }
 }
 
-module.exports = { addRating, checkUserRating, getRestaurant }
+module.exports = { addRating, checkUserRating, getRestaurantRatings };
