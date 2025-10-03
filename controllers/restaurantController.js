@@ -118,10 +118,17 @@ async function getRandomRestaurant(req, res) {
     try {
         let randomRestaurants = []; // Renamed for clarity
 
+        const baseWhereClause = {
+            isAvailabe: true,
+            verification: 'Verified' 
+        };
+
         if (code) {
-            // Find random restaurants matching the code
             randomRestaurants = await Restaurant.findAll({
-                where: { code: code },
+                where: {
+                    ...baseWhereClause, // Spread the base filters
+                    code: code
+                },
                 order: sequelize.random(),
                 limit: 20
             });
@@ -130,7 +137,7 @@ async function getRandomRestaurant(req, res) {
         // If the first search yielded no results, do the fallback search
         if (randomRestaurants.length === 0) {
             randomRestaurants = await Restaurant.findAll({
-                where: { isAvailabe: true }, // Note the typo 'isAvailabe' from your model
+                where: baseWhereClause, // Use the base filters
                 order: sequelize.random(),
                 limit: 5
             });
@@ -146,18 +153,24 @@ async function getAllNearbyRestaurant(req, res) {
     const { code } = req.params;
     try {
         let allNearbyRestaurants = [];
+         const baseWhereClause = {
+            isAvailabe: true,
+            verification: 'Verified' 
+        };
 
         if (code) {
             // Find all restaurants matching the code
             allNearbyRestaurants = await Restaurant.findAll({
-                where: { code: code }
+                where: { 
+                    ...baseWhereClause,
+                    code: code }
             });
         }
         
         // If no code was provided or no restaurants matched, fall back
         if (allNearbyRestaurants.length === 0) {
             allNearbyRestaurants = await Restaurant.findAll({
-                where: { isAvailabe: true } // Note the typo 'isAvailabe' from your model
+                where: { where: baseWhereClause, isAvailabe: true } // Note the typo 'isAvailabe' from your model
             });
         }
 
@@ -194,7 +207,7 @@ async function getPopularRestaurant(req, res) {
     try {
         popularRestaurants = []
         popularRestaurants = await Restaurant.findAll({
-            where: { isAvailabe: true },
+            where: { verification: 'Verified', isAvailabe: true },
             order: [
                 ['rating', 'DESC'] // Order by the 'rating' column in descending order
             ],

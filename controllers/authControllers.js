@@ -467,7 +467,15 @@ async function loginVendor(req, res) {
 
   try {
     // Sequelize: Use .findOne with a where clause to find the user
-    const user = await User.findOne({ where: { email: req.body.email } });
+    const user = await User.findOne(
+      { 
+        where: { email: req.body.email },
+        attributes: {
+        exclude: [ 'profile']
+    }
+      }
+
+    );
 
     if (!user) {
       logger.error(`User not found"`, { controller: 'AuthController', endpoint: `loginVendor`});
@@ -494,6 +502,9 @@ async function loginVendor(req, res) {
     // Instead of two separate queries, we do one JOIN.
     const vendorWithRestaurant = await User.findOne({
         where: { id: user.id },
+        attributes: { // Re-state the exclusion here
+        exclude: ['password', 'pin', 'otp', 'otpExpires', 'profile', 'username']
+    },
         include: [{
             model: Restaurant,
             as: 'ownedRestaurant' // This alias MUST match the one in your User.hasOne(Restaurant) association
@@ -519,7 +530,7 @@ async function loginVendor(req, res) {
     delete userData.otpExpires;
     delete userData.restaurant; // Remove the nested object as we'll add it back at the top level
 
-    res.status(200).json({ ...userData, userToken, restaurant: restaurantData || null }); // Changed to 200 OK
+    res.status(200).json({ ...userData, userToken, }); // Changed to 200 OK
     logger.info(`vendor login successful`, { controller: 'AuthController', userId: `${user.id}`, endpoint: `vendorLogin`})
 
   } catch (error) {
