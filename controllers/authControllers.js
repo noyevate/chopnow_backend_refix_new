@@ -575,6 +575,11 @@ async function loginRider(req, res) {
     // --- Use Sequelize's 'include' to fetch the user and their rider profile in one query ---
     const riderUser = await User.findOne({
         where: { id: user.id },
+        attributes: {
+          exclude: ['password', 'pin', 'otp', 'otpExpires', 'profile', 'username'],
+        },
+        
+        
         include: [{
             model: Rider,
             as: 'riderProfile' // This alias MUST match the one in your User.hasOne(Rider) association
@@ -603,7 +608,6 @@ async function loginRider(req, res) {
 
     res.status(200).json({
       ...userData,
-      rider: riderData || null, // If no rider profile exists, return null
       userToken
     });
 

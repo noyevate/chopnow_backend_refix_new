@@ -354,10 +354,13 @@ async function fetchRestaurantCategories(req, res) {
             attributes: ['restaurant_category'], // Select only the category field
             group: ['restaurant_category']       // Group by it to get unique values
         });
+        console.log(`category lists: ${categories.length}`)
 
         // The result is an array of objects, e.g., [{ restaurant_category: 'Pizza' }, ...].
         // We map it to a simple array of strings to match the original Mongoose output.
         const categoryNames = categories.map(c => c.restaurant_category);
+
+        console.log(`category names: ${categoryNames}`)
 
         return res.status(200).json(categoryNames);
     } catch (error) {
