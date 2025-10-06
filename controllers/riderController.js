@@ -269,7 +269,7 @@ async function currentTrip(req, res) {
 
         if (!order) {
             logger.info(`No active trips found for this rider.`, { controller: controllerName, riderId });
-            return res.status(200).json(null);
+            return res.status(200).json([]);
         }
 
         logger.info(`Active trip found for rider.`, { controller: controllerName, riderId, orderId: order.id });
