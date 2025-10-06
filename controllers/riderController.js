@@ -368,46 +368,62 @@ async function getAllOrdersByOrderStatus(req, res) {
 }
 
 
-async function getAvailableOrdersForRestaurantId(req, res) {
-    // Renamed 'userId' to 'riderId' in params for clarity, assuming it's the rider's ID
-    const { restaurantId, orderStatus, paymentStatus, riderId } = req.params;
+// In your controller file (e.g., riderController.js or orderController.js)
+
+async function getAvailableOrdersForRestaurant(req, res) {
+    // Rider ID and Restaurant ID come from the path
+    const { restaurantId, riderId } = req.params;
+    // Optional filters now come from the query string
+    const { statuses, paymentStatus } = req.query;
     const controllerName = 'getAvailableOrdersForRestaurant';
 
     try {
-        logger.info(`Fetching available orders for restaurant.`, { controller: controllerName, restaurantId, riderId });
+        logger.info(`Fetching available orders for restaurant.`, { controller: controllerName, restaurantId, riderId, statuses, paymentStatus });
 
         if (!restaurantId || !riderId) {
             logger.warn(`Missing required parameters restaurantId or riderId.`, { controller: controllerName });
             return res.status(400).json({ status: false, message: "Restaurant ID and Rider ID are required." });
         }
 
-        // --- THIS IS THE FIX ---
-        // 1. Start with an array of mandatory conditions
-        const whereConditions = [
-            { restaurantId: restaurantId },
-            { riderAssigned: false },
-            { orderStatus: { [Op.notIn]: ["Delivered", "Cancelled"] } },
-            literal(`NOT JSON_CONTAINS(rejectedBy, '"${riderId}"')`)
-        ];
+        // --- Build the WHERE clause dynamically ---
+        const whereClause = {
+            restaurantId: restaurantId,
+            riderAssigned: false,
+            
+            // The orderStatus MUST NOT be 'Delivered' or 'Cancelled'.
+            orderStatus: {
+                [Op.notIn]: ["Delivered", "Cancelled"]
+            },
 
-        // 2. Conditionally add the optional filters to the array
-        if (orderStatus) {
-            whereConditions.push({ orderStatus: orderStatus });
+            // Check that the current rider's ID is NOT in the 'rejectedBy' JSON array
+            [Op.and]: [
+                literal(`NOT JSON_CONTAINS(rejectedBy, '"${riderId}"')`)
+            ]
+        };
+
+        // --- THIS IS THE NEW LOGIC ---
+        // If specific statuses are provided in the query string, use them.
+        if (statuses) {
+            const orderStatuses = statuses.split(',');
+            // Add the [Op.in] condition to the existing orderStatus logic
+            whereClause.orderStatus = {
+                ...whereClause.orderStatus, // Keep the [Op.notIn] rule
+                [Op.in]: orderStatuses   // Also require the status to be one of these
+            };
         }
+        // --- END NEW LOGIC ---
+
+        // Conditionally add the paymentStatus filter if it exists
         if (paymentStatus) {
-            whereConditions.push({ paymentStatus: paymentStatus });
+            whereClause.paymentStatus = paymentStatus;
         }
 
         // --- Find all matching orders ---
-        // 3. Use [Op.and] to combine all conditions in the array
         const orders = await Order.findAll({
-            where: {
-                [Op.and]: whereConditions
-            },
+            where: whereClause,
             order: [['createdAt', 'ASC']] // Show oldest orders first
         });
-        // --- END FIX ---
-
+        
         logger.info(`Found ${orders.length} available orders for restaurant.`, { controller: controllerName, restaurantId });
         res.status(200).json(orders);
 
@@ -901,7 +917,7 @@ async function getRiderByUserId(req, res) {
 
 module.exports = {
     createRider, searchRestaurant, assignRiderToOrder, rejectOrder, currentTrip, completedTrips,
-    getAllOrdersByOrderStatus, getAvailableOrdersForRestaurantId, getDeliveredOrdersByRider,
+    getAllOrdersByOrderStatus, getAvailableOrdersForRestaurant, getDeliveredOrdersByRider,
     updateUserImageUrl, updateDriverLicenseImageUrl, updateParticularsImageUrl, updateVehicleImgUrl,
     getRiderById, getRiderUserById, updateRiderStatus, getRiderByUserId
 }

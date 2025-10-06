@@ -14,7 +14,7 @@ router.get("/available/:riderId", verifyRider, riderController.getAllOrdersByOrd
 router.get('/current-trip/:riderId', verifyRider, riderController.currentTrip);
 router.get('/completed-trips/:riderId', verifyRider, riderController.completedTrips);
 
-router.get("/restaurant_orders/:restaurantId/:orderStatus/:paymentStatus/:riderId", verifyRider, riderController.getAvailableOrdersForRestaurantId);
+router.get("/restaurant_orders/:restaurantId/:riderId", verifyRider, riderController.getAvailableOrdersForRestaurant);
 router.get('/orders/delivered/:riderId', verifyRider, riderController.getDeliveredOrdersByRider);
 
 router.patch('/update-user-image/:riderId/userImageUrl', verifyRider, riderController.updateUserImageUrl);
