@@ -7,8 +7,7 @@ router.get("/default", verifyTokenAndAuthorization, addressController.getDefault
 router.get("/all", verifyTokenAndAuthorization, addressController.getAddress);
 router.delete("/:id", verifyTokenAndAuthorization, addressController.deleteAddress);
 router.patch("/default/:id", verifyTokenAndAuthorization, addressController.setAddressDefault);
-router.get("/:id", //verifyTokenAndAuthorization, 
-    addressController.getAddressById);
+router.get("/:id", verifyTokenAndAuthorization, addressController.getAddressById);
 
 
 

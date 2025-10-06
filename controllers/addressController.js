@@ -156,15 +156,15 @@ async function getAddressById(req, res) {
     const addressId = req.params.id;
 
     try {
-        logger.info(`getting defult address`, { controller: 'addressController', userid: `${req.user.id} : getDefaultAddress  addressID: ${addressId}`});
+        logger.info(`getting defult address`, { controller: 'addressController', addressId: `getDefaultAddress  addressID: ${addressId}`});
         const address = await Address.findByPk(addressId);
         if (!address) {
             return res.status(404).json({ status: false, message: "Address not found" });
         }
-        logger.info(`address found.`, { controller: 'addressController', userid: `${req.user.id} : getDefaultAddress  addressID: ${addressId}`});
+        logger.info(`address found.`, { controller: 'addressController', addressId: `getDefaultAddress  addressID: ${addressId}`});
         return res.status(200).json({ status: true, address: address });
     } catch (error) {
-        logger.info(`Failed to get address by ID.`, { controller: 'addressController', userid: `${req.user.id} : getDefaultAddress  addressID: ${addressId}`});
+        logger.info(`Failed to get address by ID.`, { controller: 'addressController', addressIId: `getDefaultAddress  addressID: ${addressId}`});
         return res.status(500).json({ status: false, message: "Failed to get address by ID.", error: error.message });
     }
 }
