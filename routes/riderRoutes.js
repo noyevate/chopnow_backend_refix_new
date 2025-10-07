@@ -1,11 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const riderController = require('../controllers/riderController');
-const { verifyRider } = require('../middlewares/verifyToken');
+const { verifyRider, verifyTokenAndAuthorization } = require('../middlewares/verifyToken');
 
 router.post("/", riderController.createRider);
 router.get("/search", verifyRider, riderController.searchRestaurant);
-router.get("/:riderId", verifyRider, riderController.getRiderById);
+router.get("/:riderId", verifyTokenAndAuthorization, riderController.getRiderById);
 router.get("/user/:userId", verifyRider, riderController.getRiderUserById);
 router.get("/rider_details/:userId", riderController.getRiderByUserId);
 router.get("/available/:riderId", verifyRider, riderController.getAllOrdersByOrderStatus);
