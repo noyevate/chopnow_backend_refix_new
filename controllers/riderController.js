@@ -931,6 +931,57 @@ async function getRiderByUserId(req, res) {
     }
 }
 
+async function getRiderUserByRiderId(req, res) {
+    // 1. Get the ID of the Rider Profile from the URL parameters
+    const { riderId } = req.params;
+    const controllerName = 'getRiderUserByRiderId';
+
+    try {
+        logger.info(`Fetching user profile associated with a rider profile.`, { controller: controllerName, riderId });
+
+        if (!riderId) {
+            logger.warn(`Rider ID is required.`, { controller: controllerName });
+            return res.status(400).json({ status: false, message: "Rider ID is required." });
+        }
+
+        // --- Sequelize Logic Start ---
+        
+        // 2. Find the Rider by its primary key and "include" the associated User.
+        // This performs a JOIN in the background.
+        const rider = await Rider.findByPk(riderId, {
+            include: [{
+                model: User,
+                as: 'userProfile', // This alias MUST match the one in models/index.js
+                attributes: {
+                    // 3. Exclude sensitive fields directly in the query for security and efficiency.
+                    exclude: ['password', 'pin', 'otp', 'otpExpires', 'profile', 'username']
+                }
+            }]
+        });
+
+        // --- End Sequelize Logic ---
+
+        if (!rider) {
+            logger.error(`Rider profile not found.`, { controller: controllerName, riderId });
+            return res.status(404).json({ status: false, message: "Rider profile not found" });
+        }
+        
+        // The User object will be nested inside the Rider object.
+        if (!rider.userProfile) {
+            logger.error(`Data integrity issue: Rider profile exists but associated user not found.`, { controller: controllerName, riderId });
+            return res.status(404).json({ status: false, message: "Associated user account not found" });
+        }
+
+        logger.info(`Successfully fetched user profile for rider.`, { controller: controllerName, riderId, userId: rider.userProfile.id });
+        // 4. Send back ONLY the nested user profile object.
+        res.status(200).json(rider.userProfile);
+
+    } catch (error) {
+        logger.error(`Failed to fetch user profile for rider: ${error.message}`, { controller: controllerName, riderId, error: error.stack });
+        res.status(500).json({ status: false, message: "Failed to fetch user", error: error.message });
+    }
+}
+
 
 
 
@@ -938,7 +989,8 @@ module.exports = {
     createRider, searchRestaurant, assignRiderToOrder, rejectOrder, currentTrip, completedTrips,
     getAllOrdersByOrderStatus, getAvailableOrdersForRestaurant, getDeliveredOrdersByRider,
     updateUserImageUrl, updateDriverLicenseImageUrl, updateParticularsImageUrl, updateVehicleImgUrl,
-    getRiderById, getRiderUserById, updateRiderStatus, getRiderByUserId
+    getRiderById, getRiderUserById, updateRiderStatus, getRiderByUserId,
+    getRiderUserByRiderId
 }
 
 

@@ -11,11 +11,14 @@ router.get("/rider_details/:userId", riderController.getRiderByUserId);
 router.get("/available/:riderId", verifyRider, riderController.getAllOrdersByOrderStatus);
 
 
+
 router.get('/current-trip/:riderId', verifyRider, riderController.currentTrip);
 router.get('/completed-trips/:riderId', verifyRider, riderController.completedTrips);
 
 router.get("/restaurant_orders/:restaurantId/:riderId", verifyRider, riderController.getAvailableOrdersForRestaurant);
 router.get('/orders/delivered/:riderId', verifyRider, riderController.getDeliveredOrdersByRider);
+
+router.get('/rider-user-account/:riderId', verifyTokenAndAuthorization, riderController.getRiderUserByRiderId);
 
 router.patch('/update-user-image/:riderId/userImageUrl', verifyRider, riderController.updateUserImageUrl);
 router.patch('/update-driver-license-image/:riderId/driverLicenseImageUrl', verifyRider,riderController.updateDriverLicenseImageUrl);
