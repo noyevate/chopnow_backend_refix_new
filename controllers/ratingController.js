@@ -44,7 +44,7 @@ async function addRating(req, res) {
         }, {
             where: { id: restaurantId },
             transaction: t
-        });
+        });    
         
         // Update the order to mark that the restaurant has been rated
         await Order.update(
