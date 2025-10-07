@@ -846,7 +846,7 @@ async function updateRiderStatus(req, res) {
         // Step 1: Update the order's status.
         const [updatedRows] = await Order.update(
             updateData,
-            { riderStatus: riderStatus },
+            // { riderStatus: riderStatus },
             { where: { id: orderId } }
         );
 
