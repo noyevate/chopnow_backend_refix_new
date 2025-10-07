@@ -649,16 +649,35 @@ async function updateVehicleImgUrl(req, res) {
 
 async function getRiderById(req, res) {
     const { riderId } = req.params;
+    const controllerName = 'getRiderById';
 
     try {
+        logger.info(`Fetching rider profile by ID.`, { controller: controllerName, riderId });
 
-        const rider = await Rider.findById(riderId)
-        if (!rider) {
-            return res.status(404).json({ status: false, message: "Rider not found" })
+        if (!riderId) {
+            logger.warn(`Rider ID is required.`, { controller: controllerName });
+            return res.status(400).json({ status: false, message: "Rider ID is required." });
         }
-        return res.status(200).json(rider)
+
+        // --- Sequelize Logic Start ---
+
+        // Use .findByPk() which is the direct and optimized equivalent of .findById()
+        const rider = await Rider.findByPk(riderId);
+
+        // --- End Sequelize Logic ---
+
+        if (!rider) {
+            logger.error(`Rider profile not found.`, { controller: controllerName, riderId });
+            return res.status(404).json({ status: false, message: "Rider not found" });
+        }
+        
+        logger.info(`Successfully fetched rider profile.`, { controller: controllerName, riderId });
+        // Sequelize returns a clean JSON object by default when sent in a response
+        return res.status(200).json(rider);
+
     } catch (error) {
-        res.status(500).json({ status: false, message: "Failed to fetch rider" })
+        logger.error(`Failed to fetch rider by ID: ${error.message}`, { controller: controllerName, riderId, error: error.stack });
+        res.status(500).json({ status: false, message: "Failed to fetch rider", error: error.message });
     }
 }
 
