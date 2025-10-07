@@ -8,80 +8,81 @@ const sequelize = require("../config/database");
 const pushNotificationController = require("./pushNotificationController");
 
 async function rateRider(req, res) {
-    // We'll use a transaction to ensure all database operations succeed or none do.
-    const t = await sequelize.transaction();
+    const { riderId, userId, orderId, rating, comment, name } = req.body;
+    const controllerName = 'rateRider';
 
     try {
-        const { riderId, userId, orderId, rating, comment, name } = req.body;
-        const { customerFcm } = req.params;
+        logger.info(`Attempting to rate rider for order.`, { controller: controllerName, riderId, orderId, userId });
 
-        // 1. Check if a rating for this order already exists
-        const existingRating = await RiderRating.findOne({
-            where: { orderId: orderId } 
-        }, { transaction: t });
+        const newRating = await sequelize.transaction(async (t) => {
+            // --- VALIDATION ---
+            if (!riderId || !userId || !orderId || rating === undefined) {
+                throw new Error("Missing required fields: riderId, userId, orderId, or rating.");
+            }
 
-        if (existingRating) {
-            await t.rollback(); // Abort the transaction
-            return res.status(400).json({ status: false, message: "You have already rated this rider for this order." });
-        }
+            const existingRating = await RiderRating.findOne({
+                where: { orderId: orderId },
+                transaction: t // Pass transaction correctly
+            });
+            if (existingRating) {
+                throw new Error("This order has already been rated for a rider.");
+            }
 
-        // 2. Create the new rating within the transaction
-        const newRating = await RiderRating.create({
-            riderId, // These are now INTs
-            orderId, // These are now INTs
-            userId,  // These are now INTs
-            rating,
-            comment,
-            name,
-        }, { transaction: t });
+            // --- DATABASE WRITES ---
+            
+            // 1. Create the new rider rating
+            const createdRating = await RiderRating.create({
+                riderId, userId, orderId, rating, comment, name
+            }, { transaction: t });
 
-        // 3. Recalculate and update the Rider's average rating
-        const allRatingsForRider = await RiderRating.findAll({
-            where: { riderId: riderId }
-        }, { transaction: t });
+            // 2. Recalculate and update the Rider's average rating
+            const allRatingsForRider = await RiderRating.findAll({
+                where: { riderId: riderId },
+                transaction: t // Pass transaction correctly
+            });
+            
+            if (allRatingsForRider.length > 0) {
+                const totalRating = allRatingsForRider.reduce((acc, rate) => acc + parseFloat(rate.rating), 0);
+                const avgRatingValue = totalRating / allRatingsForRider.length;
 
-        const totalRating = allRatingsForRider.reduce((acc, rate) => acc + parseFloat(rate.rating), 0);
-        const avgRating = (totalRating / allRatingsForRider.length).toFixed(1);
+                await Rider.update({
+                    rating: avgRatingValue, // Pass the raw number
+                    ratingCount: allRatingsForRider.length
+                }, {
+                    where: { id: riderId }, // Find the Rider by their profile ID
+                    transaction: t
+                });
+            }
 
-        // Find the rider's profile (which is linked to a user) and update it
-        await Rider.update({
-            rating: avgRating,
-            ratingCount: allRatingsForRider.length
-        }, {
-            where: { userId: riderId }, // The Rider model is identified by the userId
-            transaction: t
+            // 3. Update the order to mark that the rider has been rated
+            await Order.update(
+                { riderRating: true },
+                { where: { id: orderId }, transaction: t }
+            );
+
+            return createdRating;
         });
 
-        // 4. Update the order to mark that the rider has been rated
-        await Order.update(
-            { riderRating: true }, // Changed from restaurantRating to riderRating for logical consistency
-            { where: { id: orderId }, transaction: t }
-        );
-
-        // 5. If everything above was successful, commit the transaction
-        await t.commit();
-
-        // 6. Send push notifications (outside the transaction)
+        // --- Post-Transaction Side Effects (Notifications) ---
         try {
-            const order = await Order.findByPk(orderId); // Refetch the order to get riderFcm
-            if (order) {
-                 await pushNotificationController.sendPushNotification(customerFcm,
-                    "Rider Rated ⭐",
-                    "You've just given the rider a new rating.", order);
-                 await pushNotificationController.sendPushNotification(order.riderFcm,
-                    "New Rating Received ⭐",
-                    "You've just received a new rating!", order);
+            const order = await Order.findByPk(orderId);
+            if (order && order.riderFcm) {
+                // Assuming customerFcm is also on the order or passed in body
+                const customerFcm = order.customerFcm; 
+                await pushNotificationController.sendPushNotification(customerFcm, "Rider Rated ⭐", "You've just given the rider a new rating.", order);
+                await pushNotificationController.sendPushNotification(order.riderFcm, "New Rating Received ⭐", "You've just received a new rating!", order);
             }
         } catch (pushError) {
-            console.log("Push notification failed after rating:", pushError);
+            logger.error(`Push notification failed after rating rider: ${pushError.message}`, { controller: controllerName });
         }
 
         res.status(201).json(newRating);
 
     } catch (err) {
-        await t.rollback(); // If any step fails, roll back all changes
-        console.error("Error in rateRider:", err);
-        res.status(500).json({ status: false, message: "Failed to rate rider.", error: err.message });
+        // The managed transaction has already rolled back.
+        logger.error(`Failed to rate rider: ${err.message}`, { controller: controllerName, error: err.stack });
+        const statusCode = err.message.includes("not found") || err.message.includes("already rated") ? 400 : 500;
+        res.status(statusCode).json({ status: false, message: "Failed to rate rider.", error: err.message });
     }
 };
 
