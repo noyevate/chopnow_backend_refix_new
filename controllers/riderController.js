@@ -832,10 +832,20 @@ async function updateRiderStatus(req, res) {
             return res.status(400).json({ status: false, message: "Invalid order status" });
         }
         
+
+        const updateData = {
+            riderStatus: riderStatus
+        };
+
+        // 2. Conditionally add the main orderStatus if the rider is marking it as delivered.
+        if (riderStatus === "OD") {
+            updateData.orderStatus = "Delivered";
+        }
         // --- Sequelize Logic Start ---
         
         // Step 1: Update the order's status.
         const [updatedRows] = await Order.update(
+            updateData,
             { riderStatus: riderStatus },
             { where: { id: orderId } }
         );
