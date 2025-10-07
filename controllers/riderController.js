@@ -97,25 +97,44 @@ async function createRider(req, res) {
 
 
 async function searchRestaurant(req, res) {
+    // Search term comes from the query string, e.g., /api/rider/search?title=kitchen
+    const { title } = req.query;
+    const controllerName = 'searchRestaurant';
+
     try {
-        const { title } = req.query;
+        logger.info(`Searching for restaurants with title: '${title}'`, { controller: controllerName });
 
         if (!title) {
-            return res.status(400).json({ status: false, message: "restaurant name is required for search." });
+            logger.warn(`Search failed: title query parameter is required.`, { controller: controllerName });
+            return res.status(400).json({ status: false, message: "A 'title' query parameter is required for the search." });
         }
 
-        // Perform a case-insensitive search using a regex pattern
-        const restaurants = await Restaurant.find({ title: { $regex: title, $options: 'i' } });
+        // --- Sequelize Logic Start ---
+        
+        // Find all restaurants where the title contains the search term.
+        const restaurants = await Restaurant.findAll({
+            where: {
+                // Use the [Op.like] operator for case-insensitive partial matching.
+                title: {
+                    [Op.like]: `%${title}%`
+                },
+                // Also, only return verified restaurants in public search results.
+                verification: 'Verified'
+            },
+            limit: 25 // It's a good practice to limit search results.
+        });
 
-        if (restaurants.length === 0) {
-            return res.status(404).json({ status: false, message: "No restaurants found." });
-        }
+        // --- End Sequelize Logic ---
 
+        // It's standard to return an empty array [] with a 200 OK for a search that yields no results.
+        logger.info(`Search found ${restaurants.length} restaurants.`, { controller: controllerName, searchTerm: title });
         res.status(200).json(restaurants);
+
     } catch (error) {
+        logger.error(`Failed to search for restaurants: ${error.message}`, { controller: controllerName, error: error.stack });
         res.status(500).json({ status: false, message: "Server error", error: error.message });
     }
-};
+}
 
 
 async function assignRiderToOrder(req, res) {
