@@ -3,6 +3,7 @@ const {Rating, Restaurant, Order} = require("../models");
 
 // Import the sequelize instance to create a transaction
 const sequelize = require('../config/database'); 
+const logger = require('../utils/logger')
 
 // In your ratingController.js
 
