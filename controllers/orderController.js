@@ -540,22 +540,41 @@ async function getAllUserOrdersDeliveredOrCancelled(req, res) {
     }
 }
 
+// In your orderController.js
 async function getDeliveredAndCancelledOrders(req, res) {
     const userId = req.user.id;
+    const controllerName = 'getDeliveredAndCancelledOrders';
+
     try {
+        logger.info(`Fetching past orders for user.`, { controller: controllerName, userId });
+
+        // --- THIS IS THE FIX ---
         const orders = await Order.findAll({
+            // 'where' is a top-level option
             where: {
-                userId,
-                orderStatus: { [Op.in]: ["Delivered", "Cancelled"] },
-                include: [{
+                userId: userId,
+                orderStatus: {
+                    [Op.in]: ["Delivered", "Cancelled"]
+                }
+            },
+            
+            // 'include' is a separate, top-level option
+            include: [{
                 model: Restaurant,
-                as: 'restaurant',
+                as: 'restaurant', // This alias MUST match the one in models/index.js
                 attributes: ["id", "logoUrl", "title", "phone"]
-            }]
-            }
+            }],
+            
+            // It's also good practice to add an order
+            order: [['updatedAt', 'DESC']]
         });
+        // --- END FIX ---
+        
+        logger.info(`Found ${orders.length} past orders for user.`, { controller: controllerName, userId });
         res.status(200).json(orders);
+
     } catch (error) {
+        logger.error(`Failed to get past orders: ${error.message}`, { controller: controllerName, userId, error: error.stack });
         res.status(500).json({ status: false, message: "Failed to get past orders.", error: error.message });
     }
 }
