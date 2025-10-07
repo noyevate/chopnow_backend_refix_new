@@ -45,7 +45,7 @@ userId: {
     type: DataTypes.STRING,
     allowNull: false,
     references: {
-      model: 'users', // Assuming a rider is also a user
+      model: 'riders', // Assuming a rider is also a user
       key: 'id'
     }
   },

@@ -40,6 +40,7 @@ Restaurant.hasMany(Additive, { foreignKey: 'restaurantId', as: 'additives' });
 
 // --- Rider Associations ---
 Rider.belongsTo(User, { foreignKey: 'userId', as: 'userProfile' }); // Inverse of User.hasOne
+Rider.hasMany(RiderRating, { foreignKey: 'riderId', as: 'receivedRatings' });
 
 // --- Order Associations ---
 Order.belongsTo(User, { foreignKey: 'userId', as: 'customer' });
