@@ -1,6 +1,6 @@
 // Import the new Sequelize models
 const {RiderRating, Rider, Order, User} = require("../models"); // Corrected model name
-const logger = require('../utils/logger')
+const logger = require('../utils/logger');
 
 
 // Import the sequelize instance to create a transaction
