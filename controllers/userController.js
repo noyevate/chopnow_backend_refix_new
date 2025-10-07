@@ -5,7 +5,7 @@
 // const jwt = require('jsonwebtoken')
 
 
-const { User } = require('../models');
+const { User, Price, Other } = require('../models');
 
 // --- UTILS ---
 const { generateOTP, hashPIN } = require('../utils/generate_otp');
@@ -41,15 +41,13 @@ async function verifyPhone(req, res) {
     const { id, otp } = req.params;
 
     try {
-        // Sequelize: Find user by primary key
         const user = await User.findByPk(id);
 
         if (!user) {
             return res.status(404).json({ status: false, message: 'User not found' });
         }
 
-        // Check for OTP expiration
-        if (user.otpExpires < new Date()) { // Compare with a new Date object
+        if (user.otpExpires < new Date()) {
             return res.status(400).json({ status: false, message: 'OTP has expired. Please request a new one.' });
         }
 
@@ -57,24 +55,41 @@ async function verifyPhone(req, res) {
             // OTP is correct. Update the user record.
             await user.update({
                 phoneVerification: true,
-                otp: null,       // Clear OTP
-                otpExpires: null // Clear OTP expiry
+                otp: null,
+                otpExpires: null
             });
 
+            // Generate the token
             const token = jwt.sign({
-                id: user.id, // Use .id
+                id: user.id,
                 userType: user.userType,
                 phone: user.phone
             }, process.env.JWT_SECRET, { expiresIn: "50d" });
 
-            // Get clean data and remove sensitive fields
+            // --- THIS IS THE NEW PART ---
+            // Fetch the global price and other configurations
+            const priceConfig = await Price.findOne();
+            const otherConfig = await Other.findOne();
+            // --- END NEW PART ---
+
+            // Get clean user data
             const userData = user.toJSON();
             delete userData.password;
             delete userData.otp;
             delete userData.otpExpires;
             delete userData.pin;
 
-            return res.status(200).json({ ...userData, token }); // Changed to 200 OK for an update
+            // Construct the final, rich response
+            const response = {
+                ...userData,
+                token,
+                price: priceConfig ? priceConfig.basePrice : null,
+                service_charge: priceConfig ? priceConfig.serviceFee : null,
+                others: otherConfig
+            };
+
+            return res.status(200).json(response);
+            
         } else {
             return res.status(400).json({ status: false, message: "OTP verification failed. Invalid OTP." });
         }
