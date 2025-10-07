@@ -11,14 +11,11 @@ async function addRating(req, res) {
     const { restaurantId, userId, rating, comment, name, orderId } = req.body;
     const controllerName = 'addRating';
 
-    // Use a managed transaction for cleaner error handling
     try {
         logger.info(`Attempting to add rating for order.`, { controller: controllerName, orderId, userId });
 
-        const result = await sequelize.transaction(async (t) => {
-            // --- VALIDATION ---
-            if (!orderId || !rating || !restaurantId || !userId) {
-                // Throwing an error inside a managed transaction automatically triggers a rollback
+        const newRating = await sequelize.transaction(async (t) => {
+            if (!orderId || rating === undefined || !restaurantId || !userId) {
                 throw new Error("Missing required fields: orderId, rating, restaurantId, or userId.");
             }
 
@@ -30,46 +27,43 @@ async function addRating(req, res) {
                 throw new Error("This order has already been rated.");
             }
 
-            // --- DATABASE WRITES ---
-            
-            // 1. Create the new rating
-            const newRating = await Rating.create({
-                restaurantId,
-                userId,
-                rating,
-                comment,
-                name
+            const createdRating = await Rating.create({
+                restaurantId, userId, rating, comment, name
             }, { transaction: t });
 
-            // 2. Recalculate and update the restaurant's average rating
+            // --- THIS IS THE FIX ---
+            // 1. Pass the transaction correctly as part of the options object.
             const allRatings = await Rating.findAll({
-                where: { restaurantId: restaurantId }
-            }, { transaction: t });
-
-            const totalRating = allRatings.reduce((acc, rate) => acc + parseFloat(rate.rating), 0);
-            const avgRating = (totalRating / allRatings.length).toFixed(1);
-
-            await Restaurant.update({
-                rating: avgRating,
-                ratingCount: allRatings.length.toString()
-            }, {
-                where: { id: restaurantId },
-                transaction: t
+                where: { restaurantId: restaurantId },
+                transaction: t // <-- Correct placement
             });
-            
-            // 3. Update the order using the instance we already found
-            await orderToUpdate.update({ restaurantRating: true }, { transaction: t });
+            // --- END FIX ---
 
-            return newRating; // Return the created rating on success
+            if (allRatings.length > 0) {
+                const totalRating = allRatings.reduce((acc, rate) => acc + parseFloat(rate.rating), 0);
+                // 2. Calculate as a number first, then format for the database
+                const avgRatingValue = totalRating / allRatings.length;
+
+                await Restaurant.update({
+                    rating: avgRatingValue, // Pass the raw number
+                    ratingCount: allRatings.length.toString()
+                }, {
+                    where: { id: restaurantId },
+                    transaction: t
+                });
+            }
+            
+            await orderToUpdate.update({ restaurantRating: true }, { transaction: t });
+            
+            return createdRating;
         });
 
-        res.status(201).json(result);
+        res.status(201).json(newRating);
 
     } catch (err) {
-        // The managed transaction has already been rolled back.
+        // The managed transaction has already rolled back.
         logger.error(`Failed to add rating: ${err.message}`, { controller: controllerName, error: err.stack });
-        // Send a more specific error code if possible
-        const statusCode = err.message.includes("not found") || err.message.includes("already been rated") ? 404 : 500;
+        const statusCode = err.message.includes("not found") || err.message.includes("already rated") ? 400 : 500;
         res.status(statusCode).json({ status: false, message: "Failed to add rating.", error: err.message });
     }
 };
