@@ -326,6 +326,11 @@ async function createRiderAccount(req, res) {
 
 async function setPIN(req, res) {
   const { id, pin } = req.params;
+    
+  // --- START DEBUGGING ---
+  console.log("--- SET PIN PROCESS ---");
+  console.log(`1. Received plain-text PIN from URL params: '${pin}'`);
+  // --- END DEBUGGING ---
   logger.info(`setting account pin`, { controller: 'AuthController', message: "set pin endpoint reached", endpoint: `setPIN` });
 
   try {
@@ -341,11 +346,14 @@ async function setPIN(req, res) {
 
     // Hash the PIN
     const hashedPin = await hashPIN(pin);
+    console.log(`2. Generated hash: '${hashedPin}'`);
     
     // Sequelize: Use the instance .update() method to save the change
     await user.update({
       pin: hashedPin
     });
+
+     console.log("3. Hash successfully saved to database.");
 
     // Generate JWT token
     const token = jwt.sign({ id: user.id, userType: user.userType, phone: user.phone }, process.env.JWT_SECRET, { expiresIn: '50d' });
@@ -382,6 +390,8 @@ async function login(req, res) {
       return res.status(404).json({ status: false, message: 'User not found' });
     }
 
+    console.log(`2. Fetched stored hash from database: '${user.pin}'`);
+
     // This check seems to be for phone verification. A better check might be user.phoneVerification === false
     if (user.otp !== "none" && user.otp !== null) { // Adjusted check for Sequelize default
       logger.error(`Phone number not verified`, { controller: 'AuthController', userId: `${user.id}`, endpoint: `login`});
@@ -389,7 +399,11 @@ async function login(req, res) {
     }
 
     // Check if the PIN matches
+
+    
     const isPinValid = await bcrypt.compare(pin, user.pin);
+
+    console.log(`3. bcrypt.compare result: ${isPinValid}`);
     if (!isPinValid) {
       logger.error(`Wrong PIN`, { controller: 'AuthController', userId: `${user.id}`, endpoint: `login`});
       return res.status(400).json({ status: false, message: 'Wrong PIN' });
