@@ -5,6 +5,7 @@ const { getIO } = require("../services/socket_io");
 const { Op, literal } = require('sequelize');
 const logger = require('../utils/logger');
 const bcrypt = require('bcryptjs');
+const payoutService = require('../services/payoutService');
  
 
 
@@ -1055,6 +1056,23 @@ async function verifyDeliveryAndPayout(req, res) {
 
         // --- PIN IS CORRECT, PROCEED WITH PAYOUT AND STATUS UPDATE ---
         logger.info(`Delivery PIN verified for order. Proceeding with payout.`, { controller: controllerName, orderId });
+         logger.info(`Delivery PIN verified for order. Proceeding with payouts.`, { controllerName, orderId });
+
+        // 1. Trigger the Payouts
+        const restaurantPayoutPromise = payoutService.triggerRestaurantPayout(order);
+        const riderPayoutPromise = payoutService.triggerRiderPayout(order);
+
+        // Run both payout requests in parallel for efficiency
+        const [restaurantResult, riderResult] = await Promise.all([restaurantPayoutPromise, riderPayoutPromise]);
+        
+        // Check if either payout failed.
+        if (!restaurantResult.success || !riderResult.success) {
+            logger.error(`One or more payouts failed for order.`, { controllerName, orderId, restaurantResult, riderResult });
+            // Even if payout fails, we might still mark the order as delivered.
+            // This is a business logic decision. For now, let's stop and return an error.
+            return res.status(500).json({ status: false, message: "Payment processing failed. Please contact support." });
+        }
+
 
         // 1. Trigger the Payout (Your existing payout logic would go here)
         // const payoutResponse = await triggerPayoutFunction(order.deliveryFee, order.restaurant.bank, ...);
