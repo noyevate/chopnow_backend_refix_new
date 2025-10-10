@@ -135,6 +135,14 @@ userId: {
     type: DataTypes.JSON,
     allowNull: true
   },
+  deliveryPin: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  pickupPin: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
   
   // Foreign keys (userId, deliveryAddressId, restaurantId) are added via associations
 }, {

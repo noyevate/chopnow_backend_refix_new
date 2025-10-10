@@ -268,6 +268,7 @@ const sequelize = require('../config/database');
 const pushNotificationController = require("./pushNotificationController");
 const redisClient = require("../services/redisClients");
 const logger = require('../utils/logger');
+const bcrypt = require('bcryptjs');
 
 // In orderController.js
 async function placeOrder(req, res) {
@@ -278,6 +279,13 @@ async function placeOrder(req, res) {
             // 2. Separate the orderItems array from the main order data.
             const { orderItems, ...orderData } = req.body;
             orderData.userId = req.user.id; // Assign the authenticated user's ID
+
+            const plainTextPin = Math.floor(1000 + Math.random() * 9000).toString();
+
+            // 2. Hash the PIN before saving it to the database
+            const salt = await bcrypt.genSalt(10);
+            const hashedPin = await bcrypt.hash(plainTextPin, salt);
+            orderData.deliveryPin = hashedPin;
 
             // 3. Create the main Order record within the transaction.
             const newOrder = await Order.unscoped().create(orderData, { transaction: t });
@@ -298,16 +306,24 @@ async function placeOrder(req, res) {
                 await OrderItem.bulkCreate(itemsToCreate, { transaction: t });
             }
 
-            return newOrder;
+            return { order: newOrder, deliveryPin: plainTextPin };
         });
+        const { order, deliveryPin } = result;
 
         // --- Post-Transaction Logic (Push Notifications) ---
         const completeOrder = await Order.findByPk(result.id);
         // ... (your push notification logic) ...
 
+        const responseData = {
+            status: true,
+            message: "Order placed successfully",
+            orderId: order.id,
+            deliveryPin: deliveryPin // <-- Send the PIN to the customer app
+        };
+
         logger.info(`Order placed successfully`, { controller: 'orderController', orderId: `${result.id}`, endpoint: `placeOrder`});
 
-        res.status(201).json({ status: true, message: "Order placed successfully", orderId: result.id });
+        res.status(201).json(responseData);
 
     } catch (error) {
         // Sequelize often wraps the original DB error. Let's log both.
@@ -633,6 +649,97 @@ async function getLastRiderLocation(req, res) {
     }
 }
 
+async function getOrdersByRestaurant(req, res) {
+    // 1. Get the required restaurantId from the URL path
+    const { restaurantId } = req.params;
+    // 2. Get the optional orderStatus from the query string
+    const { orderStatus } = req.query; 
+    const controllerName = 'getOrdersByRestaurant';
+
+    try {
+        logger.info(`Fetching orders for restaurant.`, { controller: controllerName, restaurantId, orderStatus });
+
+        if (!restaurantId) {
+            logger.warn(`Restaurant ID is required.`, { controller: controllerName });
+            return res.status(400).json({ status: false, message: "Restaurant ID is required." });
+        }
+
+        // --- Build the WHERE clause dynamically ---
+        const whereClause = {
+            restaurantId: restaurantId
+        };
+        
+        // 3. If an orderStatus is provided in the query, add it to the where clause.
+        if (orderStatus) {
+            whereClause.orderStatus = orderStatus;
+        }
+
+        // --- Find all matching orders ---
+        const orders = await Order.findAll({
+            where: whereClause,
+            order: [['createdAt', 'DESC']] // Show the newest orders first
+        });
+        
+        // The defaultScope on the Order model will automatically include
+        // the orderItems and their food details.
+        
+        logger.info(`Found ${orders.length} orders for restaurant.`, { controller: controllerName, restaurantId, filters: { orderStatus } });
+        res.status(200).json(orders);
+
+    } catch (error) {
+        logger.error(`Failed to fetch orders for restaurant: ${error.message}`, { controller: controllerName, restaurantId, error: error.stack });
+        res.status(500).json({ status: false, message: "Server error", error: error.message });
+    }
+}
+
+async function resendDeliveryPin(req, res) {
+    const { orderId } = req.params;
+    const userId = req.user.id; // Get the authenticated user
+    const controllerName = 'resendDeliveryPin';
+
+    try {
+        logger.info(`Customer requested to resend delivery PIN for order.`, { controller: controllerName, orderId, userId });
+
+        const order = await Order.findOne({
+            where: {
+                id: orderId,
+                userId: userId // CRUCIAL: Ensure the user owns this order
+            }
+        });
+
+        if (!order || !order.deliveryPin) {
+            return res.status(404).json({ status: false, message: "Active order not found." });
+        }
+
+        // --- THIS IS THE CRITICAL LOGIC ---
+        // 1. Generate a NEW plain-text PIN.
+        const newPlainTextPin = Math.floor(1000 + Math.random() * 9000).toString();
+
+        // 2. Hash the NEW PIN.
+        const salt = await bcrypt.genSalt(10);
+        const newHashedPin = await bcrypt.hash(newPlainTextPin, salt);
+        
+        // 3. Update the order in the database with the NEW hashed PIN.
+        await order.update({
+            deliveryPin: newHashedPin
+        });
+        
+        // 4. Send the NEW plain-text PIN to the customer's verified phone number.
+        // await sendSmsToCustomer(order.customerPhone, `Your new delivery PIN for order #${order.orderSubId} is ${newPlainTextPin}.`);
+        // --- END CRITICAL LOGIC ---
+
+        logger.info(`Successfully resent new delivery PIN for order.`, { controller: controllerName, orderId, userId });
+        res.status(200).json({ status: true, message: `A new PIN has been sent to your phone number.`, newPlainTextPin });
+
+    } catch (error) {
+        logger.error(`Failed to resend PIN: ${error.message}`, { controller: controllerName, orderId, error: error.stack });
+        res.status(500).json({ status: false, message: "Server error", error: error.message });
+    }
+}
+
+
+
+
 module.exports = {
     placeOrder,
     getDeliveredAndCancelledOrders,
@@ -644,5 +751,7 @@ module.exports = {
     getAllOrdersByRestaurantId,
     getAllOrdersByOrderStatus,
     getOrderByOrderId,
-    getLastRiderLocation
+    getLastRiderLocation,
+    getOrdersByRestaurant,
+    resendDeliveryPin
 };

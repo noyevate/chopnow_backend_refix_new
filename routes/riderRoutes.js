@@ -20,6 +20,8 @@ router.get('/orders/delivered/:riderId', verifyRider, riderController.getDeliver
 
 router.get('/rider-user-account/:riderId', verifyTokenAndAuthorization, riderController.getRiderUserByRiderId);
 
+router.post('/resend-pickup-pin/:orderId/:riderId', verifyRider, riderController.resendPickupPin);
+
 router.patch('/update-user-image/:riderId/userImageUrl', verifyRider, riderController.updateUserImageUrl);
 router.patch('/update-driver-license-image/:riderId/driverLicenseImageUrl', verifyRider,riderController.updateDriverLicenseImageUrl);
 router.patch('/update-particulars-image/:riderId/particularsImageUrl', verifyRider, riderController.updateParticularsImageUrl);
@@ -29,6 +31,7 @@ router.put('/assign-rider/:orderId/:riderId/:riderFcm', verifyRider, riderContro
 router.put('/reject-order/:orderId/:riderId/:riderfcm', verifyRider, riderController.rejectOrder);
 
 router.patch('/update-riderStatus/:orderId/:riderStatus/:riderFcm', verifyRider, riderController.updateRiderStatus);
+router.post('/verify-delivery/:orderId/:pin', verifyRider, riderController.verifyDeliveryAndPayout);
 
 
 

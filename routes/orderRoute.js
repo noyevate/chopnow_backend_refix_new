@@ -21,6 +21,10 @@ router.get("/get-all-order/by/:orderStatus/:paymentStatus",verifyTokenAndAuthori
 // router.get("/:restaurantId/:orderStatus/:paymentStatus", verifyTokenAndAuthorization,  orderController.getOrdersByRestaurantId);
 router.get('/fetch-order/:orderId', verifyTokenAndAuthorization,  orderController.getOrderByOrderId);
 
+router.post('/resend-pin/:orderId', verifyTokenAndAuthorization, orderController.resendDeliveryPin);
+
+router.get('/restaurant/status/:restaurantId', verifyVendor, orderController.getOrdersByRestaurant);
+
 
 
 
@@ -30,6 +34,7 @@ router.get('/fetch-order/:orderId', verifyTokenAndAuthorization,  orderControlle
 
 
 router.patch('/updateOrderStatus/:orderId/:orderStatus/:restaurantFcm',  verifyVendor, orderController.updateOrderStatus);
+
 // router.patch('/updateOrderStatus/:orderId', verifyTokenAndAuthorization,  orderController.updateOrderStatus);
 
 // router.get("/status-and-payment", verifyTokenAndAuthorization,  orderController.getOrdersByStatusAndPayment);

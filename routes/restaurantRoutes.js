@@ -14,5 +14,6 @@ router.get("/", restaurantController.getRestaurantbyUserId);
 router.post('/toggle-availability/:id', verifyVendor, restaurantController.restaurantAvailability);
 router.post("/addTime/:id", verifyVendor, restaurantController.addTimeToRestaurant);
 router.put('/updateRestaurant/:restaurantId', verifyVendor, restaurantController.updatedRestaurant);
+router.post('/verify-pickup/:orderId/', verifyVendor, restaurantController.verifyPickupPin);
 
 module.exports = router;

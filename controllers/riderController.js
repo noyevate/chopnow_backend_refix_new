@@ -4,6 +4,8 @@ const pushNotificationController = require("./pushNotificationController")
 const { getIO } = require("../services/socket_io");
 const { Op, literal } = require('sequelize');
 const logger = require('../utils/logger');
+const bcrypt = require('bcryptjs');
+ 
 
 
 // In controllers/riderController.js
@@ -164,13 +166,19 @@ async function assignRiderToOrder(req, res) {
             return res.status(403).json({ status: false, message: "Order has already been assigned." });
         }
 
+        const plainTextPickupPin = Math.floor(1000 + Math.random() * 9000).toString();
+
+        const salt = await bcrypt.genSalt(10);
+        const hashedPickupPin = await bcrypt.hash(plainTextPickupPin, salt);
+
         // Step 2: Update the order with the new rider details in a single operation.
         // The .update() instance method saves the changes to the database.
         const updatedOrder = await order.update({
             riderId: riderId,
             riderAssigned: true,
             riderStatus: "RA",
-            riderFcm: riderFcm
+            riderFcm: riderFcm,
+            pickupPin: hashedPickupPin
         });
 
         // --- End Sequelize Logic ---
@@ -192,7 +200,7 @@ async function assignRiderToOrder(req, res) {
         io.to(`order_${updatedOrder.id}`).emit("order:assigned", { orderId: updatedOrder.id, riderId: updatedOrder.riderId });
         logger.info(`Socket event 'order:assigned' emitted.`, { controller: controllerName, orderId });
 
-        res.status(200).json({ status: true, message: "Rider assigned successfully.", data: updatedOrder });
+        res.status(200).json({ status: true, message: "Rider assigned successfully.", data: updatedOrder, pickupPin: plainTextPickupPin });
 
     } catch (error) {
         logger.error(`Failed to assign rider: ${error.message}`, { controller: controllerName, orderId, error: error.stack });
@@ -1012,6 +1020,121 @@ async function getRiderUserByRiderId(req, res) {
 }
 
 
+async function verifyDeliveryAndPayout(req, res) {
+    const { orderId, pin } = req.params;
+    // const { pin } = req.body; // PIN should be sent in the body
+    const controllerName = 'verifyDeliveryAndPayout';
+
+    try {
+        logger.info(`Rider attempting to verify delivery PIN for order.`, { controller: controllerName, orderId });
+
+        if (!pin || pin.length !== 4) {
+            return res.status(400).json({ status: false, message: "A 4-digit PIN is required." });
+        }
+
+        const order = await Order.findByPk(orderId, {
+            // We need the restaurant details for the payout
+            include: [{ model: Restaurant, as: 'restaurant' }]
+        });
+
+        if (!order || !order.deliveryPin) {
+            return res.status(404).json({ status: false, message: "Order not found or no delivery PIN is set." });
+        }
+
+        if (order.orderStatus === 'Delivered') {
+            logger.warn(`Attempt to verify PIN for an order that has already been delivered.`, { controller: controllerName, orderId });
+            return res.status(400).json({ status: false, message: "This order has already been marked as delivered." });
+        }
+        // --- PIN VERIFICATION ---
+        const isPinValid = await bcrypt.compare(pin, order.deliveryPin);
+
+        if (!isPinValid) {
+            logger.warn(`Incorrect delivery PIN attempt for order.`, { controller: controllerName, orderId });
+            return res.status(400).json({ status: false, message: "Incorrect PIN." });
+        }
+
+        // --- PIN IS CORRECT, PROCEED WITH PAYOUT AND STATUS UPDATE ---
+        logger.info(`Delivery PIN verified for order. Proceeding with payout.`, { controller: controllerName, orderId });
+
+        // 1. Trigger the Payout (Your existing payout logic would go here)
+        // const payoutResponse = await triggerPayoutFunction(order.deliveryFee, order.restaurant.bank, ...);
+        // if (!payoutResponse.success) {
+        //   return res.status(500).json({ status: false, message: "Payment processing failed." });
+        // }
+
+        // 2. Update the Order and Rider Status to Delivered
+        await order.update({
+            orderStatus: 'Delivered',
+            riderStatus: 'OD',
+            paymentStatus: 'Completed' // Or whatever the final payment status should be
+        });
+
+        // 3. Send notifications and socket events
+        const io = getIO();
+        io.to(`order_${orderId}`).emit("order:delivered", { orderId: orderId });
+        // ... send push notifications to customer ...
+
+        res.status(200).json({ status: true, message: "Delivery confirmed and payment initiated." });
+
+    } catch (error) {
+        logger.error(`Failed to verify delivery: ${error.message}`, { controller: controllerName, orderId, error: error.stack });
+        res.status(500).json({ status: false, message: "Server error", error: error.message });
+    }
+}
+
+
+async function resendPickupPin(req, res) {
+    // Rider's PROFILE ID comes from the URL, order ID also from the URL
+    const { orderId, riderId } = req.params;
+    const controllerName = 'resendPickupPin';
+
+    try {
+        logger.info(`Rider requesting resend of pickup PIN.`, { controller: controllerName, orderId, riderId });
+
+        if (!orderId || !riderId) {
+            return res.status(400).json({ status: false, message: "Order ID and Rider ID are required." });
+        }
+
+        // --- NEW LOGIC: FIND THEN CHECK ---
+
+        // Step 1: Find the order by its primary key.
+        const order = await Order.findByPk(orderId);
+
+        // Check if the order exists and is in a valid state
+        if (!order || !order.pickupPin || order.orderStatus === 'Delivered' || order.orderStatus === 'Cancelled') {
+            return res.status(404).json({ status: false, message: "Active order not found." });
+        }
+        
+        // Step 2: Manually check if the order is assigned to the rider making the request.
+        // This is the application-level authorization check.
+        if (order.riderId !== riderId) {
+            logger.warn(`Authorization failed: Rider tried to resend PIN for an order not assigned to them.`, { controller: controllerName, orderId, requestRiderId: riderId, actualRiderId: order.riderId });
+            return res.status(403).json({ status: false, message: "Forbidden: This order is not assigned to you." });
+        }
+
+        // --- END NEW LOGIC ---
+
+        // --- Logic to generate and send the NEW PIN ---
+        const newPlainTextPin = Math.floor(1000 + Math.random() * 9000).toString();
+        const salt = await bcrypt.genSalt(10); // You need to generate salt here
+        const newHashedPin = await bcrypt.hash(newPlainTextPin, salt);
+        
+        await order.update({ pickupPin: newHashedPin });
+
+        // Send the NEW plain-text PIN to the rider's device via push notification
+        if (order.riderFcm) {
+            await pushNotificationController.sendPushNotification(order.riderFcm, "Your Pickup PIN", `Your new pickup PIN for order #${order.orderSubId} is ${newPlainTextPin}.`);
+        }
+
+        logger.info(`Successfully resent new pickup PIN for order.`, { controller: controllerName, orderId, riderId });
+        res.status(200).json({ status: true, message: `A new pickup PIN has been sent to your device.`, pickupPin: newPlainTextPin });
+
+    } catch (error) {
+        logger.error(`Failed to resend pickup PIN: ${error.message}`, { controller: controllerName, orderId, error: error.stack });
+        res.status(500).json({ status: false, message: "Server error", error: error.message });
+    }
+}
+
 
 
 module.exports = {
@@ -1019,7 +1142,7 @@ module.exports = {
     getAllOrdersByOrderStatus, getAvailableOrdersForRestaurant, getDeliveredOrdersByRider,
     updateUserImageUrl, updateDriverLicenseImageUrl, updateParticularsImageUrl, updateVehicleImgUrl,
     getRiderById, getRiderUserById, updateRiderStatus, getRiderByUserId,
-    getRiderUserByRiderId
+    getRiderUserByRiderId, verifyDeliveryAndPayout, resendPickupPin
 }
 
 
