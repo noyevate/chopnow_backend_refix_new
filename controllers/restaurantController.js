@@ -377,7 +377,8 @@ async function verifyPickupPin(req, res) {
         const order = await Order.findByPk(orderId);
 
         if (!order || !order.pickupPin) {
-            return res.status(404).json({ status: false, message: "Order not found or no pickup PIN is set." });
+            return res.status(404).json({ status: false, message: "Order not found or no pickup PIN is set." });  
+            
         }
 
         if (order.orderStatus === 'Out_For_Delivery' || order.orderStatus === 'Delivered') {
