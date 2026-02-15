@@ -30,22 +30,22 @@ const logger = winston.createLogger({
         new winston.transports.File({ filename: "ecombined.log" }),
 
 
-        winstonAzureBlob({
+        // winstonAzureBlob({
 
-            account: {
-                name: process.env.AZURE_STORAGE_NAME,
-                key: process.env.AZURE_STORAGE_KEY,
-                // host: 'The host address',
-                // sasToken: 'The Shared Access Signature token',
-                connectionString: process.env.AZURE_STORAGE_CONNECTION_STRING
-            },
+        //     account: {
+        //         name: process.env.AZURE_STORAGE_NAME,
+        //         key: process.env.AZURE_STORAGE_KEY,
+        //         // host: 'The host address',
+        //         // sasToken: 'The Shared Access Signature token',
+        //         connectionString: process.env.AZURE_STORAGE_CONNECTION_STRING
+        //     },
 
-            // connectionString: process.env.AZURE_STORAGE_CONNECTION_STRING,
-            // containerName: process.env.AZURE_LOGS_CONTAINER_NAME,
-            blobName: `app-log-${new Date().toISOString().split('T')[0]}.log`,
-            level: 'info',
-            eol: '\n',
-        })
+        //     // connectionString: process.env.AZURE_STORAGE_CONNECTION_STRING,
+        //     // containerName: process.env.AZURE_LOGS_CONTAINER_NAME,
+        //     blobName: `app-log-${new Date().toISOString().split('T')[0]}.log`,
+        //     level: 'info',
+        //     eol: '\n',
+        // })
     ],
     exitOnError: false,
 });
