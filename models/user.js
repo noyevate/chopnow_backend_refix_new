@@ -114,6 +114,7 @@ const User =  sequelize.define('User', {
   // --- Model Options ---
   tableName: 'users', // Explicitly tell Sequelize the name of the table in the database
   timestamps: true,   // This enables the automatic 'createdAt' and 'updatedAt' fields
+   paranoid: true,
 });
 
 // 4. Synchronize the model with the database (for development)

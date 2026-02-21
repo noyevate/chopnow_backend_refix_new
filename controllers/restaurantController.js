@@ -99,15 +99,10 @@ async function getRestaurantByUser(req, res) {
 
 async function getRestaurantbyUserId(req, res) {
     const userId = req.user.id; // From middleware
-    try {
-        // Your Mongoose code used .find which returns an array.
-        // The equivalent is .findAll(). However, since a user can only have one restaurant
-        // (due to the UNIQUE constraint on userId), .findOne() is more correct here.
+    try {        
         const restaurant = await Restaurant.findOne({ where: { userId: userId } });
 
         if (!restaurant) {
-            // Sending an empty object or a specific message is a design choice.
-            // 404 is appropriate if a restaurant is expected.
             return res.status(404).json({ status: false, message: "Restaurant not found for this user." });
         }
         res.status(200).json(restaurant);
