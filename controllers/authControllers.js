@@ -167,61 +167,157 @@ async function createAccount(req, res) {
 
 
 // In your authController.js
+// async function createRestaurantAccount(req, res) {
+//   const { first_name, last_name, phone, email, password, fcm } = req.body;
+
+//   const t = await sequelize.transaction();
+//   logger.info(`Creating new restaurant account for email: ${email}`, { controller: 'AuthController', endpoint: `createRestaurantAccount`});
+
+//   try {
+//     // --- Validation Phase ---
+//     const phoneRegex = /^(?:0)?[789]\d{9}$/;
+//     if (!phoneRegex.test(phone)) {
+//       return res.status(400).json({ status: false, message: 'Phone number is invalid.' });
+//     }
+
+//     // 1. Check if email already exists
+//     const existingEmailUser = await User.findOne({ where: { email: email } });
+//     if (existingEmailUser) {
+//       return res.status(409).json({ status: false, message: 'Email already exists. Please log in.' });
+//     }
+    
+//     // --- THIS IS THE FIX ---
+//     // 2. Format the phone number and check if it already exists
+//     const formattedPhone = phone.startsWith('+234') ? phone : '+234' + phone.replace(/^0/, '');
+//     const existingPhoneUser = await User.findOne({ where: { phone: formattedPhone } });
+//     if (existingPhoneUser) {
+//         return res.status(409).json({ status: false, message: "A user with this phone number already exists." });
+//     }
+//     // --- END FIX ---
+
+//     // --- Database Operation Phase (inside transaction) ---
+//     const newPassword = await hashPIN(password);
+//     const otp = generateOTP();
+
+//     const user = await User.create({
+//       first_name,
+//       last_name,
+//       password: newPassword,
+//       phone: formattedPhone, // Use the formatted phone number
+//       email,
+//       userType: "Vendor",
+//       otp: otp,
+//       otpExpires: new Date(Date.now() + 10 * 60 * 1000),
+//       fcm
+//     }, { transaction: t });
+
+//     // Try sending the verification email
+//     try {
+//       await sendEmail(user.email, otp);
+//     } catch (emailError) {
+//       // ... (error handling for email is the same)
+//     }
+
+//     // If email succeeds, commit the transaction
+//     await t.commit();
+//     logger.info(`New restaurant account created successfully`, { controller: 'AuthController', userId: user.id });
+//     res.status(201).json({
+//       status: true,
+//       message: 'Account created. Please verify your email.',
+//       user: {
+//         id: user.id,
+//         first_name: user.first_name,
+//         last_name: user.last_name,
+//         phone: user.phone,
+//         email: user.email
+//       }
+//     });
+
+//   } catch (error) {
+//     // If anything in the try block fails, ensure the transaction is rolled back
+//     // Note: Managed transactions handle this automatically, but this manual one is fine.
+//     await t.rollback();
+//     logger.error(`Server error during restaurant account creation: ${error.message}`, { controller: 'AuthController', endpoint: `createRestaurantAccount`});
+//     res.status(500).json({ status: false, message: 'Server error', error: error.message });
+//   }
+// }
+
 async function createRestaurantAccount(req, res) {
   const { first_name, last_name, phone, email, password, fcm } = req.body;
 
-  const t = await sequelize.transaction();
-  logger.info(`Creating new restaurant account for email: ${email}`, { controller: 'AuthController', endpoint: `createRestaurantAccount`});
+  logger.info(`Creating new restaurant account for email: ${email}`, {
+    controller: 'AuthController',
+    endpoint: 'createRestaurantAccount'
+  });
 
   try {
-    // --- Validation Phase ---
+    // --- Validation Phase (NO transaction open yet) ---
     const phoneRegex = /^(?:0)?[789]\d{9}$/;
     if (!phoneRegex.test(phone)) {
       return res.status(400).json({ status: false, message: 'Phone number is invalid.' });
     }
 
-    // 1. Check if email already exists
-    const existingEmailUser = await User.findOne({ where: { email: email } });
+    const formattedPhone = phone.startsWith('+234')
+      ? phone
+      : '+234' + phone.replace(/^0/, '');
+
+    // Run both existence checks in parallel to save time
+    const [existingEmailUser, existingPhoneUser] = await Promise.all([
+      User.findOne({ where: { email } }),
+      User.findOne({ where: { phone: formattedPhone } })
+    ]);
+
     if (existingEmailUser) {
       return res.status(409).json({ status: false, message: 'Email already exists. Please log in.' });
     }
-    
-    // --- THIS IS THE FIX ---
-    // 2. Format the phone number and check if it already exists
-    const formattedPhone = phone.startsWith('+234') ? phone : '+234' + phone.replace(/^0/, '');
-    const existingPhoneUser = await User.findOne({ where: { phone: formattedPhone } });
     if (existingPhoneUser) {
-        return res.status(409).json({ status: false, message: "A user with this phone number already exists." });
+      return res.status(409).json({ status: false, message: 'A user with this phone number already exists.' });
     }
-    // --- END FIX ---
 
-    // --- Database Operation Phase (inside transaction) ---
+    // --- Prepare data before opening transaction ---
     const newPassword = await hashPIN(password);
     const otp = generateOTP();
 
-    const user = await User.create({
-      first_name,
-      last_name,
-      password: newPassword,
-      phone: formattedPhone, // Use the formatted phone number
-      email,
-      userType: "Vendor",
-      otp: otp,
-      otpExpires: new Date(Date.now() + 10 * 60 * 1000),
-      fcm
-    }, { transaction: t });
+    // --- Open transaction only when you're ready to write ---
+    const t = await sequelize.transaction();
+    let user;
 
-    // Try sending the verification email
+    try {
+      user = await User.create({
+        first_name,
+        last_name,
+        password: newPassword,
+        phone: formattedPhone,
+        email,
+        userType: 'Vendor',
+        otp,
+        otpExpires: new Date(Date.now() + 10 * 60 * 1000),
+        fcm
+      }, { transaction: t });
+
+      await t.commit();
+    } catch (dbError) {
+      await t.rollback();
+      throw dbError; // bubble up to outer catch
+    }
+
+    // --- Send email AFTER committing the transaction ---
     try {
       await sendEmail(user.email, otp);
     } catch (emailError) {
-      // ... (error handling for email is the same)
+      // User is created; log but don't fail the request
+      logger.warn(`Account created but email failed for ${user.email}: ${emailError.message}`, {
+        controller: 'AuthController',
+        userId: user.id
+      });
     }
 
-    // If email succeeds, commit the transaction
-    await t.commit();
-    logger.info(`New restaurant account created successfully`, { controller: 'AuthController', userId: user.id });
-    res.status(201).json({
+    logger.info(`New restaurant account created successfully`, {
+      controller: 'AuthController',
+      userId: user.id
+    });
+
+    return res.status(201).json({
       status: true,
       message: 'Account created. Please verify your email.',
       user: {
@@ -234,13 +330,15 @@ async function createRestaurantAccount(req, res) {
     });
 
   } catch (error) {
-    // If anything in the try block fails, ensure the transaction is rolled back
-    // Note: Managed transactions handle this automatically, but this manual one is fine.
-    await t.rollback();
-    logger.error(`Server error during restaurant account creation: ${error.message}`, { controller: 'AuthController', endpoint: `createRestaurantAccount`});
-    res.status(500).json({ status: false, message: 'Server error', error: error.message });
+    logger.error(`Server error during restaurant account creation: ${error.message}`, {
+      controller: 'AuthController',
+      endpoint: 'createRestaurantAccount'
+    });
+    return res.status(500).json({ status: false, message: 'Server error', error: error.message });
   }
 }
+
+
 
 
 // In your authController.js
