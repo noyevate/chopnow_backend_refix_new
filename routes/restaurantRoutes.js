@@ -2,6 +2,8 @@ const router = require('express').Router();
 const restaurantController = require('../controllers/restaurantController');
 const {verifyVendor} = require('../middlewares/verifyToken');
 const {verifyTokenAndAuthorization} = require('../middlewares/verifyToken')
+const { verifyAdmin } = require('../middlewares/verifyToken'); 
+
 
 router.post("/", verifyVendor, restaurantController.addRestaurant);
 router.get('/popular', restaurantController.getPopularRestaurant);
@@ -15,5 +17,8 @@ router.post('/toggle-availability/:id', verifyVendor, restaurantController.resta
 router.post("/addTime/:id", verifyVendor, restaurantController.addTimeToRestaurant);
 router.put('/updateRestaurant/:restaurantId', verifyVendor, restaurantController.updatedRestaurant);
 router.post('/verify-pickup/:orderId/', verifyVendor, restaurantController.verifyPickupPin);
+router.patch('/verify/:restaurantId', verifyAdmin, restaurantController.verifyRestaurant);
+// router.patch('/verify/:restaurantId', restaurantController.verifyRestaurant);
+
 
 module.exports = router;

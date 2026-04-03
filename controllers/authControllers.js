@@ -427,6 +427,9 @@ async function createRiderAccount(req, res) {
 
 
 
+
+
+
 async function setPIN(req, res) {
   const { id, pin } = req.params;
     
@@ -735,4 +738,121 @@ async function loginRider(req, res) {
 }
 
 
-module.exports = { createAccount, login, loginVendor,loginRider, setPIN, validateEmail, createRiderAccount, validatePhone, validatePassword, resendOTP, createRestaurantAccount };
+
+
+
+
+async function createAdmin(req, res) {
+    const { first_name, last_name, phone, email, password } = req.body;
+    const controllerName = 'createAdmin';
+
+    try {
+        logger.info(`Attempting to create a new admin account for email: ${email}`, { controller: controllerName });
+
+        // --- Validation ---
+        const existingUser = await User.findOne({ where: { email: email } });
+        if (existingUser) {
+            return res.status(409).json({ status: false, message: 'An account with this email already exists.' });
+        }
+
+        const formattedPhone = phone.startsWith('+234') ? phone : '+234' + phone.replace(/^0/, '');
+        const existingPhoneUser = await User.findOne({ where: { phone: formattedPhone } });
+        if (existingPhoneUser) {
+            return res.status(409).json({ status: false, message: "A user with this phone number already exists." });
+        }
+        
+        // --- Create Admin User ---
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        const adminUser = await User.create({
+            first_name,
+            last_name,
+            email,
+            phone: formattedPhone,
+            password: hashedPassword,
+            userType: "Admin", // CRUCIAL: Set the userType to 'Admin'
+            verification: true, // Admins are usually pre-verified
+            phoneVerification: true,
+        });
+
+        logger.info(`Admin account created successfully.`, { controller: controllerName, newAdminId: adminUser.id });
+        
+        // Return a sanitized version of the new admin user
+        res.status(201).json({
+            status: true,
+            message: "Admin account created successfully.",
+            admin: {
+                id: adminUser.id,
+                email: adminUser.email,
+                userType: adminUser.userType
+            }
+        });
+
+    } catch (error) {
+        logger.error(`Error creating admin account: ${error.message}`, { controller: controllerName, error: error.stack });
+        res.status(500).json({ status: false, message: 'Server error', error: error.message });
+    }
+}
+
+
+// ===================================================================
+//                           ADMIN LOGIN
+// ===================================================================
+async function adminLogin(req, res) {
+    const { email, password } = req.body; // Admins log in with email and password
+    const controllerName = 'adminLogin';
+
+    try {
+        logger.info(`Admin login attempt for email: ${email}`, { controller: controllerName });
+
+        if (!email || !password) {
+            return res.status(400).json({ status: false, message: "Email and password are required." });
+        }
+        
+        // Find the user by email
+        const adminUser = await User.findOne({ where: { email: email } });
+
+        if (!adminUser) {
+            logger.warn(`Admin login failed: User not found for email: ${email}`, { controller: controllerName });
+            return res.status(404).json({ status: false, message: "Invalid credentials." });
+        }
+        
+        // --- AUTHORIZATION CHECK ---
+        // Ensure the user is actually an Admin
+        if (adminUser.userType !== 'Admin') {
+            logger.error(`Authorization failed: Non-admin user tried to log in via admin endpoint.`, { controller: controllerName, userId: adminUser.id, userType: adminUser.userType });
+            return res.status(403).json({ status: false, message: "Access denied. Not an admin account." });
+        }
+        
+        // Verify the password
+        const isPasswordValid = await bcrypt.compare(password, adminUser.password);
+        if (!isPasswordValid) {
+            logger.warn(`Admin login failed: Incorrect password for email: ${email}`, { controller: controllerName });
+            return res.status(401).json({ status: false, message: "Invalid credentials." });
+        }
+        
+        // Generate JWT token
+        const token = jwt.sign(
+            { id: adminUser.id, userType: adminUser.userType, email: adminUser.email },
+            process.env.JWT_SECRET,
+            { expiresIn: "8h" } // Admin sessions are often shorter
+        );
+
+        // Sanitize user data for the response
+        const userData = adminUser.toJSON();
+        delete userData.password;
+        delete userData.pin;
+        delete userData.otp;
+        delete userData.otpExpires;
+
+        logger.info(`Admin login successful.`, { controller: controllerName, adminId: adminUser.id });
+        res.status(200).json({ ...userData, token });
+
+    } catch (error) {
+        logger.error(`Error during admin login: ${error.message}`, { controller: controllerName, error: error.stack });
+        res.status(500).json({ status: false, message: 'Server error', error: error.message });
+    }
+}
+
+
+module.exports = { createAccount, login, loginVendor,loginRider, setPIN, validateEmail, createRiderAccount, validatePhone, validatePassword, resendOTP, createRestaurantAccount, createAdmin, adminLogin };

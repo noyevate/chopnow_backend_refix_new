@@ -417,7 +417,55 @@ async function verifyPickupPin(req, res) {
     }
 }
 
+async function verifyRestaurant(req, res) {
+    const { restaurantId } = req.params;
+    const controllerName = 'verifyRestaurant';
+
+    try {
+        logger.info(`Admin attempting to verify restaurant.`, { controller: controllerName, restaurantId });
+
+        if (!restaurantId) {
+            logger.warn(`Restaurant ID is required for verification.`, { controller: controllerName });
+            return res.status(400).json({ status: false, message: "Restaurant ID is required." });
+        }
+
+        // --- Sequelize Logic Start ---
+        
+        const [updatedRows] = await Restaurant.update(
+            { verification: 'Verified' }, // The data to update
+            {
+                where: { id: restaurantId } // The condition to find the correct restaurant
+            }
+        );
 
 
-module.exports = { addRestaurant, getRestaurantById, addTimeToRestaurant, getRestaurantByUser, getRestaurantbyUserId, getRandomRestaurant, getAllNearbyRestaurant, restaurantAvailability, getPopularRestaurant, updatedRestaurant, addRestuarantAccountDetails, verifyPickupPin }
+        if (updatedRows === 0) {
+            logger.error(`Restaurant not found for verification.`, { controller: controllerName, restaurantId });
+            return res.status(404).json({ status: false, message: "Restaurant not found." });
+        }
+
+        // Optional: Fetch the updated restaurant to send back in the response
+        const updatedRestaurant = await Restaurant.findByPk(restaurantId);
+
+        // Optional: Send a push notification to the vendor whose restaurant was just approved
+        // if (updatedRestaurant.restaurantFcm) {
+        //     await pushNotificationController.sendPushNotification(updatedRestaurant.restaurantFcm, "Congratulations!", "Your restaurant has been verified and is now live!", updatedRestaurant);
+        // }
+        
+        logger.info(`Successfully verified restaurant.`, { controller: controllerName, restaurantId });
+        res.status(200).json({
+            status: true,
+            message: "Restaurant has been successfully verified.",
+            restaurant: updatedRestaurant
+        });
+
+    } catch (error) {
+        logger.error(`Failed to verify restaurant: ${error.message}`, { controller: controllerName, restaurantId, error: error.stack });
+        res.status(500).json({ status: false, message: "Server error", error: error.message });
+    }
+}
+
+
+
+module.exports = { addRestaurant, getRestaurantById, addTimeToRestaurant, getRestaurantByUser, getRestaurantbyUserId, getRandomRestaurant, getAllNearbyRestaurant, restaurantAvailability, getPopularRestaurant, updatedRestaurant, addRestuarantAccountDetails, verifyPickupPin, verifyRestaurant }
 

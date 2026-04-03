@@ -1,9 +1,11 @@
 const express = require('express');
-const { createAccount, setPIN, login, loginVendor, loginRider, validatePhone, createRiderAccount, validateEmail, resendOTP,  validatePassword, createRestaurantAccount } = require('../controllers/authControllers');
+const { createAccount, setPIN, login, loginVendor, loginRider, validatePhone, createRiderAccount, validateEmail, resendOTP,  validatePassword, createRestaurantAccount, createAdmin, adminLogin} = require('../controllers/authControllers');
 
 const router = express.Router();
 const redisClient = require("../services/redisClients");
 const http = require("http");
+
+
 
 
 // const { Server } = require('socket.io');
@@ -25,6 +27,11 @@ router.post('/verify-password/:password/:id', validatePassword);
 router.post('/verify-email/:email', validateEmail);
 router.post('/vendor', loginVendor);
 router.post('/rider', loginRider);
+// router.post('/admin/create', verifyAdmin, authController.createAdmin);
+
+router.post('/admin/create', createAdmin);
+
+router.post('/admin/login', adminLogin);
 
 // router.get("/get-order/:orderId/location", async (req, res) => {
 //   try {
