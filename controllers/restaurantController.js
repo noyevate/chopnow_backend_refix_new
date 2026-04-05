@@ -6,12 +6,13 @@ const logger = require('../utils/logger');
 const { Op } = require("sequelize");
 const sequelize = require('../config/database');
 const bcrypt = require('bcryptjs');
+const { isRestaurantOpen } = require("../utils/restaurantUtils");
 
 async function addRestaurant(req, res) {
-    const { title, userId } = req.body;
-
+   
     try {
-        // Sequelize: Use Op.or to check for existing restaurant by userId OR title
+        const userId = req.user.id;
+        const { title } = req.body;        
         const existingRestaurant = await Restaurant.findOne({
             where: {
                 [Op.or]: [
@@ -22,36 +23,26 @@ async function addRestaurant(req, res) {
         });
 
         if (existingRestaurant) {
-            // Sequelize uses strict equality (===) for numbers, so no .toString() is needed
-            if (existingRestaurant.userId = userId) {
-                return res.status(409).json({ status: false, message: "User already has a restaurant" }); // 409 Conflict
+            if (existingRestaurant.userId === userId) {
+                return res.status(409).json({ status: false, message: "User already has a restaurant" });
             } else if (existingRestaurant.title === title) {
                 return res.status(409).json({ status: false, message: "A restaurant with this title already exists" });
             }
         }
 
-        // --- Prepare data for creation ---
-        // Flatten the coords object and rename coords.title to addressTitle
         const restaurantData = {
             ...req.body,
-            latitude: req.body.latitude,
-            longitude: req.body.longitude,
-            latitudeDelta: req.body.latitudeDelta,
-            longitudeDelta: req.body.longitudeDelta,
-            address: req.body.address,
-            addressTitle: req.body.title, // Renamed field
+            userId,
+            addressTitle: req.body.addressTitle, // ✅ correct field
         };
-        delete restaurantData.coords; // Remove the original coords object
 
-        // Sequelize: Use .create() to add the new restaurant
         const newRestaurant = await Restaurant.create(restaurantData);
 
-        // Send back a clean, formatted response
         res.status(201).json({
             status: true,
             message: "Restaurant added Successfully",
-            restaurant: { // Renamed from newRestaurant to restaurant for clarity
-                restaurantId: newRestaurant.id, // Use .id in Sequelize
+            restaurant: {
+                restaurantId: newRestaurant.id,
                 title: newRestaurant.title,
                 rating: newRestaurant.rating,
                 address: newRestaurant.address,
@@ -63,6 +54,63 @@ async function addRestaurant(req, res) {
         res.status(500).json({ status: false, message: "Failed to add restaurant.", error: error.message });
     }
 }
+
+// async function addRestaurant(req, res) {
+//     const { title, userId } = req.body;
+
+//     try {
+//         // Sequelize: Use Op.or to check for existing restaurant by userId OR title
+//         const existingRestaurant = await Restaurant.findOne({
+//             where: {
+//                 [Op.or]: [
+//                     { userId: userId },
+//                     { title: title }
+//                 ]
+//             }
+//         });
+
+//         if (existingRestaurant) {
+//             // Sequelize uses strict equality (===) for numbers, so no .toString() is needed
+//             if (existingRestaurant.userId = userId) {
+//                 return res.status(409).json({ status: false, message: "User already has a restaurant" }); // 409 Conflict
+//             } else if (existingRestaurant.title === title) {
+//                 return res.status(409).json({ status: false, message: "A restaurant with this title already exists" });
+//             }
+//         }
+
+//         // --- Prepare data for creation ---
+//         // Flatten the coords object and rename coords.title to addressTitle
+//         const restaurantData = {
+//             ...req.body,
+//             latitude: req.body.latitude,
+//             longitude: req.body.longitude,
+//             latitudeDelta: req.body.latitudeDelta,
+//             longitudeDelta: req.body.longitudeDelta,
+//             address: req.body.address,
+//             addressTitle: req.body.title, // Renamed field
+//         };
+//         delete restaurantData.coords; // Remove the original coords object
+
+//         // Sequelize: Use .create() to add the new restaurant
+//         const newRestaurant = await Restaurant.create(restaurantData);
+
+//         // Send back a clean, formatted response
+//         res.status(201).json({
+//             status: true,
+//             message: "Restaurant added Successfully",
+//             restaurant: { // Renamed from newRestaurant to restaurant for clarity
+//                 restaurantId: newRestaurant.id, // Use .id in Sequelize
+//                 title: newRestaurant.title,
+//                 rating: newRestaurant.rating,
+//                 address: newRestaurant.address,
+//                 verification: newRestaurant.verification,
+//                 code: newRestaurant.code
+//             }
+//         });
+//     } catch (error) {
+//         res.status(500).json({ status: false, message: "Failed to add restaurant.", error: error.message });
+//     }
+// }
 
 
 async function getRestaurantById(req, res) {
@@ -466,6 +514,34 @@ async function verifyRestaurant(req, res) {
 }
 
 
+async function getRestaurantOpenStatus(req, res) {
+    try {
+        const { restaurantId } = req.params;
+        const { orderType } = req.query; // e.g. ?orderType=delivery
 
-module.exports = { addRestaurant, getRestaurantById, addTimeToRestaurant, getRestaurantByUser, getRestaurantbyUserId, getRandomRestaurant, getAllNearbyRestaurant, restaurantAvailability, getPopularRestaurant, updatedRestaurant, addRestuarantAccountDetails, verifyPickupPin, verifyRestaurant }
+        const restaurant = await Restaurant.findByPk(restaurantId, {
+            attributes: ["id", "isAvailabe", "time", "title"],
+        });
+
+        if (!restaurant) {
+            return res.status(404).json({ status: false, message: "Restaurant not found" });
+        }
+
+        const result = isRestaurantOpen(restaurant, orderType || "delivery");
+
+        return res.status(200).json({
+            status: true,
+            restaurantId,
+            ...result, // { isOpen: true/false, reason: "..." }
+        });
+
+    } catch (error) {
+        res.status(500).json({ status: false, message: "Could not check restaurant status", error: error.message });
+    }
+}
+
+
+
+
+module.exports = { addRestaurant, getRestaurantById, addTimeToRestaurant, getRestaurantByUser, getRestaurantbyUserId, getRandomRestaurant, getAllNearbyRestaurant, restaurantAvailability, getPopularRestaurant, updatedRestaurant, addRestuarantAccountDetails, verifyPickupPin, verifyRestaurant, getRestaurantOpenStatus  }
 

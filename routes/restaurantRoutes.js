@@ -18,6 +18,7 @@ router.post("/addTime/:id", verifyVendor, restaurantController.addTimeToRestaura
 router.put('/updateRestaurant/:restaurantId', verifyVendor, restaurantController.updatedRestaurant);
 router.post('/verify-pickup/:orderId/', verifyVendor, restaurantController.verifyPickupPin);
 router.patch('/verify/:restaurantId', verifyAdmin, restaurantController.verifyRestaurant);
+router.get("/:restaurantId/status", restaurantController.getRestaurantOpenStatus);
 // router.patch('/verify/:restaurantId', restaurantController.verifyRestaurant);
 
 
