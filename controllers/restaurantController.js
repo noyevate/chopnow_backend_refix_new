@@ -541,7 +541,75 @@ async function getRestaurantOpenStatus(req, res) {
 }
 
 
+// restaurantController.js
+
+async function updateOperatingHours(req, res) {
+    try {
+        const userId = req.user.id;
+        const { time } = req.body;
+
+        // --- 1. Find the restaurant belonging to this vendor ---
+        const restaurant = await Restaurant.findOne({ where: { userId } });
+
+        if (!restaurant) {
+            return res.status(404).json({
+                status: false,
+                message: "No restaurant found for this account"
+            });
+        }
+
+        // --- 2. Validate the incoming time object ---
+        if (!time || typeof time !== "object" || Array.isArray(time)) {
+            return res.status(400).json({
+                status: false,
+                message: "Invalid time format. Expected a structured operating hours object"
+            });
+        }
+
+        if (!time.timezone) {
+            return res.status(400).json({
+                status: false,
+                message: "timezone is required in the time object (e.g. 'Africa/Lagos')"
+            });
+        }
+
+        const validDays = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+
+        // Check that at least one valid day key exists
+        const hasValidDays = Object.keys(time).some(key => 
+            key !== "timezone" && (
+                validDays.includes(key) ||                          // flat structure
+                ["delivery", "pickup"].includes(key)               // nested structure
+            )
+        );
+
+        if (!hasValidDays) {
+            return res.status(400).json({
+                status: false,
+                message: "time object must include at least one day schedule"
+            });
+        }
+
+        // --- 3. Update ---
+        await restaurant.update({ time });
+
+        return res.status(200).json({
+            status: true,
+            message: "Operating hours updated successfully",
+            time: restaurant.time
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            status: false,
+            message: "Failed to update operating hours",
+            error: error.message
+        });
+    }
+}
 
 
-module.exports = { addRestaurant, getRestaurantById, addTimeToRestaurant, getRestaurantByUser, getRestaurantbyUserId, getRandomRestaurant, getAllNearbyRestaurant, restaurantAvailability, getPopularRestaurant, updatedRestaurant, addRestuarantAccountDetails, verifyPickupPin, verifyRestaurant, getRestaurantOpenStatus  }
+
+
+module.exports = { addRestaurant, getRestaurantById, addTimeToRestaurant, getRestaurantByUser, getRestaurantbyUserId, getRandomRestaurant, getAllNearbyRestaurant, restaurantAvailability, getPopularRestaurant, updatedRestaurant, addRestuarantAccountDetails, verifyPickupPin, verifyRestaurant, getRestaurantOpenStatus, updateOperatingHours  }
 
