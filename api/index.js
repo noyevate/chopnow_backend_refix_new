@@ -22,6 +22,7 @@ const PackRoute = require("../routes/packRoute");
 const RiderRoute = require("../routes/riderRoutes");
 const RiderRatingRoute = require("../routes/riderRatingRoutes");
 const PriceRoute = require("../routes/priceRoute");
+const AdminRoute = require("../routes/adminRoutes");
 
 const OtherRoute = require("../routes/othersRoute");
 const redisClient = require("../services/redisClients");
@@ -63,6 +64,7 @@ app.use('/api/pack', PackRoute);
 app.use('/api/rider', RiderRoute);
 app.use('/api/rider_rating', RiderRatingRoute);
 app.use('/api/price', PriceRoute);
+app.use('/api/admin', AdminRoute);
 app.use('/api/others', OtherRoute);
 
 
