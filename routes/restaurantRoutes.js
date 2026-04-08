@@ -7,9 +7,10 @@ const { verifyAdmin } = require('../middlewares/verifyToken');
 
 router.post("/", verifyVendor, restaurantController.addRestaurant);
 router.get('/popular', restaurantController.getPopularRestaurant);
-router.post('/account_details', verifyVendor, restaurantController.addRestuarantAccountDetails);
+
 router.get("/:code",  restaurantController.getRandomRestaurant);
 router.get("/all/:code", restaurantController.getAllNearbyRestaurant);
+router.post('/account_details/:restaurantId', verifyVendor, restaurantController.addRestuarantAccountDetails);
 router.get("/single-restaurant/byId/:id", restaurantController.getRestaurantById);
 router.get("/byUserId/:userId", restaurantController.getRestaurantByUser);
 router.get("/", restaurantController.getRestaurantbyUserId);
