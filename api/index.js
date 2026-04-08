@@ -2,6 +2,13 @@ const dotenv = require('dotenv')
 dotenv.config();
 const express = require('express');
 const app = express();
+const cors = require('cors')
+
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PATCH', 'DELETE', 'PUT', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}))
 
 const port = process.env.PORT || 4000;
 const http = require('http')
