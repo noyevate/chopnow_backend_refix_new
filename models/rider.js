@@ -103,7 +103,11 @@ const Rider = sequelize.define('Rider', {
       model: 'users',
       key: 'id'
     }
-  }
+  },
+   recipientCode: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
 
   // userId Foreign Key is added via association
 }, {

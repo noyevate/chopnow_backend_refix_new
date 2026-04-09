@@ -108,6 +108,10 @@ const Restaurant = sequelize.define('Restaurant', {
     type: DataTypes.JSON,
     allowNull: true
   },
+   recipientCode: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
   
   // Foreign key (userId) is added via association
 }, {

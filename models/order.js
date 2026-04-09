@@ -143,6 +143,10 @@ userId: {
     type: DataTypes.STRING,
     allowNull: true
   },
+    paymentReference: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
   
   // Foreign keys (userId, deliveryAddressId, restaurantId) are added via associations
 }, {

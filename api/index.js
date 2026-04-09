@@ -32,6 +32,7 @@ const PriceRoute = require("../routes/priceRoute");
 const AdminRoute = require("../routes/adminRoutes");
 
 const OtherRoute = require("../routes/othersRoute");
+const PaymentRoute = require('../routes/paymentRoute');
 const redisClient = require("../services/redisClients");
 
 const { initSocket } = require("../services/socket_io");
@@ -73,6 +74,7 @@ app.use('/api/rider_rating', RiderRatingRoute);
 app.use('/api/price', PriceRoute);
 app.use('/api/admin', AdminRoute);
 app.use('/api/others', OtherRoute);
+app.use('/api/payment', PaymentRoute);
 
 
 // startRiderSimulation("682df4a32d550ac1f22977ed", "68b2a4f01878cb7e828c7bef");
