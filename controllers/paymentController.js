@@ -5,8 +5,6 @@ const crypto = require('crypto');
 async function initializePayment(req, res) {
     try {
         const { orderId, amount, email } = req.body;
-        code
-        Code
         const order = await Order.findByPk(orderId);
         if (!order) return res.status(404).json({ message: "Order not found" });
         if (order.paymentStatus === "Completed") return res.status(400).json({ message: "Order already paid" });
