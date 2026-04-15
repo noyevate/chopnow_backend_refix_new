@@ -54,4 +54,56 @@ async function paystackWebhook(req, res) {
         res.sendStatus(500);
     }
 }
-module.exports = { initializePayment, paystackWebhook };
+
+async function verifyPaymentAndUpdateOrder(req, res) {
+    const { reference, orderId } = req.body;
+    const controllerName = 'verifyPaymentAndUpdateOrder';
+
+    try {
+        logger.info(`Verifying payment for order.`, { controller: controllerName, reference, orderId });
+
+        if (!reference || !orderId) {
+            return res.status(400).json({ status: false, message: "Reference and Order ID are required." });
+        }
+        
+        const response = await api.get(`/transaction/verify/${reference}`);
+        
+        const paystackData = response.data.data;
+        if (paystackData.status !== 'success') {
+            logger.error(`Paystack verification failed.`, { controller: controllerName, reference, status: paystackData.status });
+            return res.status(400).json({ status: false, message: "Payment verification failed with Paystack." });
+        }
+
+        // Step 2: Find the corresponding order in your database
+        const order = await Order.findByPk(orderId);
+        if (!order) {
+            return res.status(404).json({ status: false, message: "Order not found." });
+        }
+
+        // Step 3: Security check - Verify the amount paid matches the order total
+        // Paystack amount is in kobo, order total is in Naira
+        const amountPaidInNaira = paystackData.amount / 100;
+        if (amountPaidInNaira < parseFloat(order.grandTotal)) {
+            logger.error(`Payment amount mismatch.`, { controller: controllerName, orderId, expected: order.grandTotal, actual: amountPaidInNaira });
+            // You might want to flag this order for manual review
+            return res.status(400).json({ status: false, message: "Payment amount mismatch." });
+        }
+
+        // Step 4: If everything is valid, update the order status
+        await order.update({ paymentStatus: 'Completed' });
+        
+        logger.info(`Payment verified and order updated successfully.`, { controller: controllerName, orderId, reference });
+        
+        // --- Trigger post-payment notifications ---
+        // await pushNotificationController.sendPushNotification(order.customerFcm, "Payment Success!", "Your order payment was successful.", order);
+        // await pushNotificationController.sendPushNotification(order.restaurantFcm, "New Order!", "You have a new paid order.", order);
+        // ...
+
+        res.status(200).json({ status: true, message: "Payment verified and order updated." });
+
+    } catch (error) {
+        logger.error(`Failed to verify payment: ${error.message}`, { controller: controllerName, error: error.stack });
+        res.status(500).json({ status: false, message: "Server error during payment verification.", error: error.message });
+    }
+}
+module.exports = { initializePayment, paystackWebhook, verifyPaymentAndUpdateOrder };

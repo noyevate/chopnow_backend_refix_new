@@ -10,4 +10,6 @@ router.post('/initialize', verifyToken, paymentController.initializePayment);
 // POST /api/payment/webhook -> Called by Paystack servers to confirm a payment
 router.post('/webhook', paymentController.paystackWebhook);
 
+router.post('/verify-and-update', verifyToken, paymentController.verifyPaymentAndUpdateOrder);
+
 module.exports = router;
