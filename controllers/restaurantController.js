@@ -374,16 +374,62 @@ async function addRestuarantAccountDetails(req, res) {
     // The restaurantId should be a URL parameter for a specific resource
     const { restaurantId } = req.params;
     const { accountName, accountNumber, bank } = req.body;
+      const controllerName = 'updateBankDetails';
 
-    try {
-        if (!accountName || !accountNumber || !bank) {
-            return res.status(400).json({ status: false, message: "Account Name, Number, and Bank are required." });
+    // try {
+    //     if (!accountName || !accountNumber || !bank) {
+    //         return res.status(400).json({ status: false, message: "Account Name, Number, and Bank are required." });
+    //     }
+
+    //      const recipientCode = await paystackService.createRecipient(accountName, accountNumber, bankCode);
+
+    //     const [updatedRows] = await Restaurant.update({
+    //         accountName,
+    //         accountNumber,
+    //         bank
+    //     }, {
+    //         where: { id: restaurantId }
+    //     });
+
+    //     if (updatedRows === 0) {
+    //         return res.status(404).json({ status: false, message: "Restaurant not found." });
+    //     }
+
+    //     const updatedRestaurant = await Restaurant.findByPk(restaurantId);
+    //     return res.status(200).json(updatedRestaurant);
+
+    // } catch (error) {
+    //     return res.status(500).json({ status: false, message: "Failed to add account details.", error: error.message });
+    // }
+
+     try {
+        logger.info(`Updating bank details for restaurant.`, { controller: controllerName, restaurantId });
+
+        if (!accountName || !accountNumber || !bankCode) {
+            return res.status(400).json({ status: false, message: "Account Name, Account Number, and Bank Code are required." });
         }
 
+        // --- Paystack Integration ---
+        // Step 1: Call Paystack to create a transfer recipient.
+        // This also verifies that the bank details are valid.
+        logger.info(`Creating Paystack recipient for restaurant.`, { controller: controllerName, restaurantId });
+        const recipientCode = await paystackService.createRecipient(accountName, accountNumber, bankCode);
+        
+        if (!recipientCode) {
+            // This would happen if createRecipient throws an error and it's caught
+            throw new Error("Failed to create Paystack recipient.");
+        }
+        logger.info(`Paystack recipient created successfully.`, { controller: controllerName, restaurantId, recipientCode });
+        // --- End Paystack Integration ---
+        
+
+        // --- Database Update ---
+        // Step 2: Update the restaurant record with the bank details AND the new recipientCode.
         const [updatedRows] = await Restaurant.update({
-            accountName,
-            accountNumber,
-            bank
+            accountName: accountName,
+            accountNumber: accountNumber,
+            bank: bankCode, // Save the bank code, not the name
+            recipientCode: recipientCode // <-- CRUCIAL: Save the code
         }, {
             where: { id: restaurantId }
         });
@@ -393,10 +439,13 @@ async function addRestuarantAccountDetails(req, res) {
         }
 
         const updatedRestaurant = await Restaurant.findByPk(restaurantId);
-        return res.status(200).json(updatedRestaurant);
+        logger.info(`Successfully updated bank details for restaurant.`, { controller: controllerName, restaurantId });
+        return res.status(200).json({ status: true, message: "Bank details updated and verified successfully.", restaurant: updatedRestaurant });
 
     } catch (error) {
-        return res.status(500).json({ status: false, message: "Failed to add account details.", error: error.message });
+        // This will catch errors from both the Paystack API call and the database update
+        logger.error(`Failed to update bank details: ${error.message}`, { controller: controllerName, restaurantId, error: error.stack });
+        return res.status(500).json({ status: false, message: "Failed to update bank details.", error: error.message });
     }
 }
 

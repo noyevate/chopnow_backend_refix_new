@@ -15,4 +15,13 @@ router.patch('/restaurants/:restaurantId/status', verifyAdmin, adminController.u
 // DELETE /api/admin/restaurants/:restaurantId -> Permanently delete a restaurant and its owner
 router.delete('/restaurants/:restaurantId', verifyAdmin, adminController.hardDeleteRestaurant);
 
+// GET /api/admin/riders -> Get a list of all riders
+router.get('/riders', verifyAdmin, adminController.getAllRidersForAdmin);
+
+// PATCH /api/admin/riders/:riderId/status -> Update a rider's verification status
+router.patch('/riders/:riderId/status', verifyAdmin, adminController.updateRiderVerificationStatus);
+
+// DELETE /api/admin/riders/:riderId -> Permanently delete a rider and their user account
+router.delete('/riders/:riderId', verifyAdmin, adminController.hardDeleteRider);
+
 module.exports = router;
