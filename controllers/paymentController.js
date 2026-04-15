@@ -2,31 +2,52 @@ const { Order } = require('../models');
 const { api, generateTxRef } = require('../services/paystackService');
 const logger = require("../utils/logger")
 const crypto = require('crypto');
+
+
 async function initializePayment(req, res) {
-    try {
-        const { orderId, amount, email } = req.body;
-        const order = await Order.findByPk(orderId);
-        if (!order) return res.status(404).json({ message: "Order not found" });
-        if (order.paymentStatus === "Completed") return res.status(400).json({ message: "Order already paid" });
+  const controllerName = 'initializePayment';
+  try {
+    const { orderId, amount, email } = req.body;
+    logger.info(`Initializing payment for order.`, { controller: controllerName, orderId });
 
-        const reference = generateTxRef("customer");
-
-        const response = await api.post('/transaction/initialize', {
-            email,
-            amount: amount * 100,
-            reference,
-            callback_url: process.env.PAYMENT_CALLBACK_URL,
-            metadata: { orderId: order.id },
-        });
-
-        await order.update({ paymentReference: reference, paymentStatus: "Pending" });
-
-        logger.info("Paystack payment initialized.", { reference });
-        return res.status(200).json(response.data); // Send the full response from Paystack
-    } catch (error) {
-        logger.error("Payment initialization failed.", { error: error.response?.data || error.message });
-        return res.status(500).json({ message: error.message });
+    if (!orderId || !amount || !email) {
+      return res.status(400).json({ status: false, message: "OrderId, amount, and email are required." });
     }
+
+    // --- THIS IS THE FIX ---
+    // Use Sequelize's .findByPk() to find the order by its primary key.
+    const order = await Order.unscoped().findByPk(orderId);
+    // --- END FIX ---
+
+    if (!order) {
+      logger.error(`Order not found for payment initialization.`, { controller: controllerName, orderId });
+      return res.status(404).json({ status: false, message: "Order not found" });
+    }
+
+    if (order.paymentStatus === "Completed") {
+      return res.status(400).json({ status: false, message: "Order has already been paid for." });
+    }
+
+    const reference = generateTxRef("customer");
+
+    const response = await api.post('/transaction/initialize', {
+      email,
+      amount: Math.round(amount * 100), // Convert to kobo, ensure it's an integer
+      reference,
+      callback_url: process.env.PAYMENT_CALLBACK_URL,
+      metadata: { orderId: order.id },
+    });
+
+    // Update the order with the Paystack reference for tracking
+    await order.update({ paymentReference: reference });
+
+    logger.info(`Paystack payment initialized successfully.`, { controller: controllerName, orderId, reference });
+    return res.status(200).json(response.data.data); // Return only the 'data' object from Paystack
+
+  } catch (error) {
+    logger.error(`Payment initialization failed: ${error.message}`, { controller: controllerName, error: error.stack });
+    return res.status(500).json({ status: false, message: "Payment initialization failed.", error: error.message });
+  }
 }
 async function paystackWebhook(req, res) {
     try {
