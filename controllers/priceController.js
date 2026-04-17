@@ -1,28 +1,23 @@
-// controllers/priceController.js
-const {Price} = require("../models"); // Import the new Sequelize model
+const {Price} = require("../models"); 
 
-// This function creates the *first* price or replaces the existing one.
 async function createPrice(req, res) {
-    const { basePrice, serviceFee } = req.body; // Changed to req.body for standard practice
+    const { basePrice, serviceFee } = req.body; 
 
     try {
         if (!basePrice) {
             return res.status(400).json({ status: false, message: "The base price is required." });
         }
 
-        // Check if a price row already exists
         const existingPrice = await Price.findOne();
 
-        // If it exists, we'll destroy it to maintain a single row.
         if (existingPrice) {
             await Price.destroy({ where: { id: existingPrice.id } });
         }
 
-        // Create the new price row.
-        // 'time' defaults to NOW() in the model, so we don't need to set it here.
+        
         const newPrice = await Price.create({
             basePrice: basePrice,
-            serviceFee: serviceFee || 0, // Set a default if serviceFee is not provided
+            serviceFee: serviceFee || 0, 
         });
 
         res.status(201).json(newPrice);
@@ -34,31 +29,27 @@ async function createPrice(req, res) {
 
 
 const updatePrice = async (req, res) => {
-    const { basePrice } = req.body; // Changed to req.body
+    const { basePrice } = req.body; 
 
     try {
         if (!basePrice) {
             return res.status(400).json({ status: false, message: "A base price is required." });
         }
 
-        // Find the single price document.
         const priceDoc = await Price.findOne();
 
         if (!priceDoc) {
             return res.status(404).json({ status: false, message: "No price configuration found. Please create one first." });
         }
 
-        // Prepare the entry for the historical log
         const oldPriceEntry = {
             price: priceDoc.basePrice,
             time: priceDoc.time || priceDoc.updatedAt
         };
 
-        // Get the existing oldPrices array, or initialize a new one
         const oldPrices = priceDoc.oldPrices || [];
         oldPrices.push(oldPriceEntry);
 
-        // Update the document with the new values
         await priceDoc.update({
             basePrice: basePrice,
             time: new Date(), // Set the time to now
