@@ -1,6 +1,7 @@
 const { Restaurant, Order, Rider, RiderRating, User } = require("../models");
 const pushNotificationController = require("./pushNotificationController")
 // const { io } = require("../services/socket_io");
+const sequelize = require('../config/database');
 const { getIO } = require("../services/socket_io");
 const { Op, literal } = require('sequelize');
 const logger = require('../utils/logger');
