@@ -12,4 +12,8 @@ router.post('/webhook', paymentController.paystackWebhook);
 
 router.post('/verify-and-update', verifyToken, paymentController.verifyPaymentAndUpdateOrder);
 
+router.post('/payout/restaurant', paymentController.payoutRestaurant);
+
+router.post('/payout/rider', paymentController.payoutRider);
+
 module.exports = router;

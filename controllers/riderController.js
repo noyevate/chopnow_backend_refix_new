@@ -6,6 +6,7 @@ const { Op, literal } = require('sequelize');
 const logger = require('../utils/logger');
 const bcrypt = require('bcryptjs');
 const payoutService = require('../services/payoutService');
+const { initiateTransfer } = require('../services/paystackService'); 
  
 
 
@@ -1021,10 +1022,93 @@ async function getRiderUserByRiderId(req, res) {
 }
 
 
+// async function verifyDeliveryAndPayout(req, res) {
+//     const { orderId, pin } = req.params;
+//     // const { pin } = req.body; // PIN should be sent in the body
+//     const controllerName = 'verifyDeliveryAndPayout';
+
+//     try {
+//         logger.info(`Rider attempting to verify delivery PIN for order.`, { controller: controllerName, orderId });
+
+//         if (!pin || pin.length !== 4) {
+//             return res.status(400).json({ status: false, message: "A 4-digit PIN is required." });
+//         }
+
+//         const order = await Order.findByPk(orderId, {
+//             // We need the restaurant details for the payout
+//             include: [{ model: Restaurant, as: 'restaurant' }]
+//         });
+
+//         if (!order || !order.deliveryPin) {
+//             return res.status(404).json({ status: false, message: "Order not found or no delivery PIN is set." });
+//         }
+
+//         if (order.orderStatus === 'Delivered') {
+//             logger.warn(`Attempt to verify PIN for an order that has already been delivered.`, { controller: controllerName, orderId });
+//             return res.status(400).json({ status: false, message: "This order has already been marked as delivered." });
+//         }
+//         // --- PIN VERIFICATION ---
+//         const isPinValid = await bcrypt.compare(pin, order.deliveryPin);
+
+//         if (!isPinValid) {
+//             logger.warn(`Incorrect delivery PIN attempt for order.`, { controller: controllerName, orderId });
+//             return res.status(400).json({ status: false, message: "Incorrect PIN." });
+//         }
+
+//         // --- PIN IS CORRECT, PROCEED WITH PAYOUT AND STATUS UPDATE ---
+//         logger.info(`Delivery PIN verified for order. Proceeding with payout.`, { controller: controllerName, orderId });
+//          logger.info(`Delivery PIN verified for order. Proceeding with payouts.`, { controllerName, orderId });
+
+//         // 1. Trigger the Payouts
+//         const restaurantPayoutPromise = payoutService.triggerRestaurantPayout(order);
+//         const riderPayoutPromise = payoutService.triggerRiderPayout(order);
+
+//         // Run both payout requests in parallel for efficiency
+//         const [restaurantResult, riderResult] = await Promise.all([restaurantPayoutPromise, riderPayoutPromise]);
+        
+//         // Check if either payout failed.
+//         if (!restaurantResult.success || !riderResult.success) {
+//             logger.error(`One or more payouts failed for order.`, { controllerName, orderId, restaurantResult, riderResult });
+//             // Even if payout fails, we might still mark the order as delivered.
+//             // This is a business logic decision. For now, let's stop and return an error.
+//             return res.status(500).json({ status: false, message: "Payment processing failed. Please contact support." });
+//         }
+
+
+//         // 1. Trigger the Payout (Your existing payout logic would go here)
+//         // const payoutResponse = await triggerPayoutFunction(order.deliveryFee, order.restaurant.bank, ...);
+//         // if (!payoutResponse.success) {
+//         //   return res.status(500).json({ status: false, message: "Payment processing failed." });
+//         // }
+
+//         // 2. Update the Order and Rider Status to Delivered
+//         await order.update({
+//             orderStatus: 'Delivered',
+//             riderStatus: 'OD',
+//             paymentStatus: 'Completed' // Or whatever the final payment status should be
+//         });
+
+//         // 3. Send notifications and socket events
+//         const io = getIO();
+//         io.to(`order_${orderId}`).emit("order:delivered", { orderId: orderId });
+//         // ... send push notifications to customer ...
+
+//         res.status(200).json({ status: true, message: "Delivery confirmed and payment initiated." });
+
+//     } catch (error) {
+//         logger.error(`Failed to verify delivery: ${error.message}`, { controller: controllerName, orderId, error: error.stack });
+//         res.status(500).json({ status: false, message: "Server error", error: error.message });
+//     }
+// }
+
 async function verifyDeliveryAndPayout(req, res) {
-    const { orderId, pin } = req.params;
-    // const { pin } = req.body; // PIN should be sent in the body
+    const { orderId } = req.params;
+    const { pin } = req.body;
+    const riderUserId = req.user.id;
     const controllerName = 'verifyDeliveryAndPayout';
+
+    // Use a transaction for the database updates
+    const t = await sequelize.transaction();
 
     try {
         logger.info(`Rider attempting to verify delivery PIN for order.`, { controller: controllerName, orderId });
@@ -1033,72 +1117,82 @@ async function verifyDeliveryAndPayout(req, res) {
             return res.status(400).json({ status: false, message: "A 4-digit PIN is required." });
         }
 
-        const order = await Order.findByPk(orderId, {
-            // We need the restaurant details for the payout
-            include: [{ model: Restaurant, as: 'restaurant' }]
-        });
-
+        // Fetch all necessary data upfront
+        const order = await Order.findByPk(orderId);
         if (!order || !order.deliveryPin) {
             return res.status(404).json({ status: false, message: "Order not found or no delivery PIN is set." });
         }
-
+        
+        const restaurant = await Restaurant.findByPk(order.restaurantId);
+        const rider = await Rider.findByPk(order.riderId);
+        
+        // --- Authorization & Idempotency Checks ---
+        if (rider.userId !== riderUserId) {
+            return res.status(403).json({ status: false, message: "Forbidden: This order is not assigned to you." });
+        }
         if (order.orderStatus === 'Delivered') {
-            logger.warn(`Attempt to verify PIN for an order that has already been delivered.`, { controller: controllerName, orderId });
             return res.status(400).json({ status: false, message: "This order has already been marked as delivered." });
         }
-        // --- PIN VERIFICATION ---
-        const isPinValid = await bcrypt.compare(pin, order.deliveryPin);
 
+        // --- PIN Verification ---
+        const isPinValid = await bcrypt.compare(pin, order.deliveryPin);
         if (!isPinValid) {
             logger.warn(`Incorrect delivery PIN attempt for order.`, { controller: controllerName, orderId });
             return res.status(400).json({ status: false, message: "Incorrect PIN." });
         }
 
-        // --- PIN IS CORRECT, PROCEED WITH PAYOUT AND STATUS UPDATE ---
-        logger.info(`Delivery PIN verified for order. Proceeding with payout.`, { controller: controllerName, orderId });
-         logger.info(`Delivery PIN verified for order. Proceeding with payouts.`, { controllerName, orderId });
+        // --- PIN IS CORRECT: PROCEED WITH PAYOUTS AND STATUS UPDATE ---
+        logger.info(`Delivery PIN verified. Proceeding with payouts.`, { controllerName, orderId });
 
-        // 1. Trigger the Payouts
-        const restaurantPayoutPromise = payoutService.triggerRestaurantPayout(order);
-        const riderPayoutPromise = payoutService.triggerRiderPayout(order);
-
-        // Run both payout requests in parallel for efficiency
-        const [restaurantResult, riderResult] = await Promise.all([restaurantPayoutPromise, riderPayoutPromise]);
-        
-        // Check if either payout failed.
-        if (!restaurantResult.success || !riderResult.success) {
-            logger.error(`One or more payouts failed for order.`, { controllerName, orderId, restaurantResult, riderResult });
-            // Even if payout fails, we might still mark the order as delivered.
-            // This is a business logic decision. For now, let's stop and return an error.
-            return res.status(500).json({ status: false, message: "Payment processing failed. Please contact support." });
+        // 1. Check if payout details exist
+        if (!restaurant || !restaurant.recipientCode) {
+            throw new Error("Restaurant payout details are not configured.");
+        }
+        if (!rider || !rider.recipientCode) {
+            throw new Error("Rider payout details are not configured.");
         }
 
+        // 2. Trigger both payouts in parallel directly using the service functions
+        const restaurantPayoutPromise = initiateTransfer(
+            parseFloat(order.orderTotal),
+            restaurant.recipientCode,
+            `Payment for order #${order.orderSubId}`
+        );
+        const riderPayoutPromise = initiateTransfer(
+            parseFloat(order.deliveryFee),
+            rider.recipientCode,
+            `Payment for delivery of order #${order.orderSubId}`
+        );
+        
+        // Wait for both to complete
+        const [restaurantResult, riderResult] = await Promise.all([restaurantPayoutPromise, riderPayoutPromise]);
+        
+        logger.info(`Payouts initiated via Paystack.`, { controllerName, orderId, restaurantResult, riderResult });
 
-        // 1. Trigger the Payout (Your existing payout logic would go here)
-        // const payoutResponse = await triggerPayoutFunction(order.deliveryFee, order.restaurant.bank, ...);
-        // if (!payoutResponse.success) {
-        //   return res.status(500).json({ status: false, message: "Payment processing failed." });
-        // }
-
-        // 2. Update the Order and Rider Status to Delivered
+        // 3. Update the Order and Rider Status to Delivered (within the transaction)
         await order.update({
             orderStatus: 'Delivered',
-            riderStatus: 'OD',
-            paymentStatus: 'Completed' // Or whatever the final payment status should be
-        });
+            riderStatus: 'OD'
+        }, { transaction: t });
 
-        // 3. Send notifications and socket events
+        // 4. If all database operations were successful, commit the transaction
+        await t.commit();
+        
+        // 5. Send notifications and socket events (after commit)
         const io = getIO();
         io.to(`order_${orderId}`).emit("order:delivered", { orderId: orderId });
-        // ... send push notifications to customer ...
+        // ... send push notifications ...
 
-        res.status(200).json({ status: true, message: "Delivery confirmed and payment initiated." });
+        res.status(200).json({ status: true, message: "Delivery confirmed and payments initiated." });
 
     } catch (error) {
+        // If any part of the try block failed, roll back the transaction
+        await t.rollback();
         logger.error(`Failed to verify delivery: ${error.message}`, { controller: controllerName, orderId, error: error.stack });
-        res.status(500).json({ status: false, message: "Server error", error: error.message });
+        // If the error came from Paystack, it will be caught here
+        res.status(500).json({ status: false, message: "Server error during delivery verification.", error: error.message });
     }
-}
+}   
 
 
 async function resendPickupPin(req, res) {

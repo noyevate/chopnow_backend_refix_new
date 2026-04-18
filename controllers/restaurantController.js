@@ -405,7 +405,7 @@ async function addRestuarantAccountDetails(req, res) {
      try {
         logger.info(`Updating bank details for restaurant.`, { controller: controllerName, restaurantId });
 
-        if (!accountName || !accountNumber || !bankCode) {
+        if (!accountName || !accountNumber || bank) {
             return res.status(400).json({ status: false, message: "Account Name, Account Number, and Bank Code are required." });
         }
 
@@ -413,7 +413,7 @@ async function addRestuarantAccountDetails(req, res) {
         // Step 1: Call Paystack to create a transfer recipient.
         // This also verifies that the bank details are valid.
         logger.info(`Creating Paystack recipient for restaurant.`, { controller: controllerName, restaurantId });
-        const recipientCode = await paystackService.createRecipient(accountName, accountNumber, bankCode);
+        const recipientCode = await paystackService.createRecipient(accountName, accountNumber, bank);
         
         if (!recipientCode) {
             // This would happen if createRecipient throws an error and it's caught
@@ -428,8 +428,8 @@ async function addRestuarantAccountDetails(req, res) {
         const [updatedRows] = await Restaurant.update({
             accountName: accountName,
             accountNumber: accountNumber,
-            bank: bankCode, // Save the bank code, not the name
-            recipientCode: recipientCode // <-- CRUCIAL: Save the code
+            bank: bankCode, 
+            recipientCode: recipientCode //
         }, {
             where: { id: restaurantId }
         });
