@@ -405,7 +405,7 @@ async function addRestuarantAccountDetails(req, res) {
      try {
         logger.info(`Updating bank details for restaurant.`, { controller: controllerName, restaurantId });
 
-        if (!accountName || !accountNumber || bank) {
+        if (!accountName || !accountNumber || !bank) {
             return res.status(400).json({ status: false, message: "Account Name, Account Number, and Bank Code are required." });
         }
 
@@ -428,7 +428,7 @@ async function addRestuarantAccountDetails(req, res) {
         const [updatedRows] = await Restaurant.update({
             accountName: accountName,
             accountNumber: accountNumber,
-            bank: bankCode, 
+            bank: bank, 
             recipientCode: recipientCode //
         }, {
             where: { id: restaurantId }
