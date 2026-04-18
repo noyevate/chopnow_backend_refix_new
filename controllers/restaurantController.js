@@ -7,6 +7,7 @@ const { Op } = require("sequelize");
 const sequelize = require('../config/database');
 const bcrypt = require('bcryptjs');
 const { isRestaurantOpen } = require("../utils/restaurantUtils");
+const paystackService = require('../services/paystackService');
 
 async function addRestaurant(req, res) {
    

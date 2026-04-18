@@ -7,7 +7,7 @@ const { Op, literal } = require('sequelize');
 const logger = require('../utils/logger');
 const bcrypt = require('bcryptjs');
 const payoutService = require('../services/payoutService');
-const { initiateTransfer } = require('../services/paystackService'); 
+x 
  
 
 
