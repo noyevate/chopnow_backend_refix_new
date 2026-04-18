@@ -31,7 +31,8 @@ router.put('/assign-rider/:orderId/:riderId/:riderFcm', verifyRider, riderContro
 router.put('/reject-order/:orderId/:riderId/:riderfcm', verifyRider, riderController.rejectOrder);
 
 router.patch('/update-riderStatus/:orderId/:riderStatus/:riderFcm', verifyRider, riderController.updateRiderStatus);
-router.post('/verify-delivery/:orderId/:pin', verifyRider, riderController.verifyDeliveryAndPayout);
+// router.post('/verify-delivery/:orderId/:pin', verifyRider, riderController.verifyDeliveryAndPayout);
+router.post('/verify-delivery/:orderId', verifyRider, riderController.verifyDeliveryAndPayout);
 
 
 
