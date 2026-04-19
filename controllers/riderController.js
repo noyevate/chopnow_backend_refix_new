@@ -7,6 +7,7 @@ const { Op, literal } = require('sequelize');
 const logger = require('../utils/logger');
 const bcrypt = require('bcryptjs');
 const payoutService = require('../services/payoutService');
+const paystackService = require('../services/paystackService');
  
 
 
@@ -1247,6 +1248,51 @@ async function resendPickupPin(req, res) {
     }
 }
 
+async function addRiderAccountDetails(req, res) {
+    const { riderId } = req.params;
+    const { accountName, accountNumber, bank } = req.body;
+    const controllerName = 'addRiderAccountDetails';
+
+    try {
+        logger.info(`Updating bank details for rider.`, { controller: controllerName, riderId });
+
+        if (!accountName || !accountNumber || !bank) {
+            return res.status(400).json({ status: false, message: "Account Name, Account Number, and Bank Code are required." });
+        }
+
+        // Step 1: Create Paystack recipient
+        logger.info(`Creating Paystack recipient for rider.`, { controller: controllerName, riderId });
+        const recipientCode = await paystackService.createRecipient(accountName, accountNumber, bank);
+
+        if (!recipientCode) {
+            throw new Error("Failed to create Paystack recipient.");
+        }
+        logger.info(`Paystack recipient created successfully.`, { controller: controllerName, riderId, recipientCode });
+
+        // Step 2: Update rider record
+        const [updatedRows] = await Rider.update({
+            bankAccountName: accountName,
+            bankAccount: accountNumber,
+            bankName: bank,
+            recipientCode: recipientCode
+        }, {
+            where: { id: riderId }
+        });
+
+        if (updatedRows === 0) {
+            return res.status(404).json({ status: false, message: "Rider not found." });
+        }
+
+        const updatedRider = await Rider.findByPk(riderId);
+        logger.info(`Successfully updated bank details for rider.`, { controller: controllerName, riderId });
+        return res.status(200).json({ status: true, message: "Bank details updated and verified successfully.", rider: updatedRider });
+
+    } catch (error) {
+        logger.error(`Failed to update rider bank details: ${error.message}`, { controller: controllerName, riderId, error: error.stack });
+        return res.status(500).json({ status: false, message: "Failed to update bank details.", error: error.message });
+    }
+}
+
 
 
 module.exports = {
@@ -1254,7 +1300,7 @@ module.exports = {
     getAllOrdersByOrderStatus, getAvailableOrdersForRestaurant, getDeliveredOrdersByRider,
     updateUserImageUrl, updateDriverLicenseImageUrl, updateParticularsImageUrl, updateVehicleImgUrl,
     getRiderById, getRiderUserById, updateRiderStatus, getRiderByUserId,
-    getRiderUserByRiderId, verifyDeliveryAndPayout, resendPickupPin
+    getRiderUserByRiderId, verifyDeliveryAndPayout, resendPickupPin, addRiderAccountDetails
 }
 
 

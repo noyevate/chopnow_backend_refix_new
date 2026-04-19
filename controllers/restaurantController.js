@@ -372,36 +372,9 @@ async function updatedRestaurant(req, res) {
 }
 
 async function addRestuarantAccountDetails(req, res) {
-    // The restaurantId should be a URL parameter for a specific resource
     const { restaurantId } = req.params;
     const { accountName, accountNumber, bank } = req.body;
       const controllerName = 'updateBankDetails';
-
-    // try {
-    //     if (!accountName || !accountNumber || !bank) {
-    //         return res.status(400).json({ status: false, message: "Account Name, Number, and Bank are required." });
-    //     }
-
-    //      const recipientCode = await paystackService.createRecipient(accountName, accountNumber, bankCode);
-
-    //     const [updatedRows] = await Restaurant.update({
-    //         accountName,
-    //         accountNumber,
-    //         bank
-    //     }, {
-    //         where: { id: restaurantId }
-    //     });
-
-    //     if (updatedRows === 0) {
-    //         return res.status(404).json({ status: false, message: "Restaurant not found." });
-    //     }
-
-    //     const updatedRestaurant = await Restaurant.findByPk(restaurantId);
-    //     return res.status(200).json(updatedRestaurant);
-
-    // } catch (error) {
-    //     return res.status(500).json({ status: false, message: "Failed to add account details.", error: error.message });
-    // }
 
      try {
         logger.info(`Updating bank details for restaurant.`, { controller: controllerName, restaurantId });
