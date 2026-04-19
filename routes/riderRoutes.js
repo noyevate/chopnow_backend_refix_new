@@ -34,7 +34,7 @@ router.patch('/update-riderStatus/:orderId/:riderStatus/:riderFcm', verifyRider,
 // router.post('/verify-delivery/:orderId/:pin', verifyRider, riderController.verifyDeliveryAndPayout);
 router.post('/verify-delivery/:orderId', verifyRider, riderController.verifyDeliveryAndPayout);
 
-router.post('/:riderId/bank-details', verifyRider, addRiderAccountDetails);
+router.post('/:riderId/bank-details', verifyRider, riderController.addRiderAccountDetails);
 
 
 
