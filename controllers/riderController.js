@@ -1136,7 +1136,7 @@ async function verifyDeliveryAndPayout(req, res) {
         }
 
         // --- PIN Verification ---
-        const isPinValid = await bcrypt.compare(pin, order.deliveryPin);
+        const isPinValid = await bcrypt.compare(String(pin), order.deliveryPin);;
         if (!isPinValid) {
             logger.warn(`Incorrect delivery PIN attempt for order.`, { controller: controllerName, orderId });
             return res.status(400).json({ status: false, message: "Incorrect PIN." });
