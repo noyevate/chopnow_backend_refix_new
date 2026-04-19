@@ -50,20 +50,41 @@ async function createRecipient(name, accountNumber, bankCode) {
  * @param {string} reason - The narration for the transfer.
  * @returns {Promise<object>} The transfer data from Paystack.
  */
+// async function initiateTransfer(amount, recipientCode, reason) {
+//   try {
+//     const response = await api.post('/transfer', {
+//       source: "balance",
+//       amount: amount * 100, // Convert to kobo
+//       recipient: recipientCode,
+//       reason,
+//       reference: generateTxRef("payout"),
+//     });
+//     logger.info("Paystack transfer initiated.", { reference: response.data.data.reference });
+//     return response.data.data;
+//   } catch (error) {
+//     logger.error("Paystack transfer failed.", { error: error.response?.data || error.message });
+//     throw new Error(error.response?.data?.message || "Transfer initiation failed.");
+//   }
+// }
+
 async function initiateTransfer(amount, recipientCode, reason) {
   try {
+    // Skip real transfer in test mode
+    if (process.env.PAYSTACK_SECRET_KEY.startsWith('sk_test_')) {
+      logger.info("Test mode: skipping real transfer.", { amount, recipientCode, reason });
+      return { status: "success", transfer_code: `TRF_test_${Date.now()}` };
+    }
+
     const response = await api.post('/transfer', {
       source: "balance",
-      amount: amount * 100, // Convert to kobo
+      amount: Math.round(amount * 100),
       recipient: recipientCode,
       reason,
-      reference: generateTxRef("payout"),
     });
-    logger.info("Paystack transfer initiated.", { reference: response.data.data.reference });
     return response.data.data;
   } catch (error) {
-    logger.error("Paystack transfer failed.", { error: error.response?.data || error.message });
-    throw new Error(error.response?.data?.message || "Transfer initiation failed.");
+    logger.error("Transfer failed.", { error: error.response?.data || error.message });
+    throw new Error(error.response?.data?.message || "Transfer failed.");
   }
 }
 
