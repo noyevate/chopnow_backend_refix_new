@@ -1154,12 +1154,12 @@ async function verifyDeliveryAndPayout(req, res) {
         }
 
         // 2. Trigger both payouts in parallel directly using the service functions
-        const restaurantPayoutPromise = initiateTransfer(
+        const restaurantPayoutPromise = paystackService.initiateTransfer(
             parseFloat(order.orderTotal),
             restaurant.recipientCode,
             `Payment for order #${order.orderSubId}`
         );
-        const riderPayoutPromise = initiateTransfer(
+        const riderPayoutPromise = paystackService.initiateTransfer(
             parseFloat(order.deliveryFee),
             rider.recipientCode,
             `Payment for delivery of order #${order.orderSubId}`
